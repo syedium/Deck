@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mailora — Trust, Distribution & Revenue Infrastructure</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Google Fonts for premium typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -27,7 +24,7 @@
                             canvas: '#FBFBFA',     // Premium off-white
                         }
                     },
-                    fontFamily {
+                    fontFamily: {
                         sans: ['Inter', 'sans-serif'],
                         serif: ['Playfair Display', 'Georgia', 'serif'],
                     }
@@ -63,34 +60,75 @@
         .fade-transition {
             transition: opacity 250ms ease-in-out, transform 250ms ease-in-out;
         }
+        /* Fullscreen styles to present layout-constants across screens */
+        #stage:fullscreen {
+            padding: 0 !important;
+            background-color: #FBFBFA !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        #stage:fullscreen #deckContainer {
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: none !important;
+            max-height: none !important;
+            border-radius: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            aspect-ratio: auto !important;
+            padding: 5rem 6rem !important;
+        }
+        /* Adaptive scaling layout safety overrides inside presentation mode */
+        #stage:fullscreen #slideContent {
+            justify-content: center !important;
+            gap: 1.5rem !important;
+        }
+        #stage:fullscreen .grid {
+            gap: 2rem !important;
+        }
+
         /* Print Styles to convert presentation into continuous handout perfectly */
         @media print {
-            .no-print {
+            .no-print, header, aside, main > .absolute {
                 display: none !important;
+            }
+            html, body {
+                height: auto !important;
+                overflow: visible !important;
+                background: white !important;
+                color: black !important;
+            }
+            #stage {
+                display: block !important;
+                padding: 0 !important;
+                background: transparent !important;
+            }
+            #deckContainer {
+                display: none !important;
+            }
+            #handoutContainer {
+                display: block !important;
+                width: 100% !important;
+                max-width: none !important;
             }
             .print-break {
                 page-break-after: always;
                 break-after: page;
-            }
-            body {
-                background: white !important;
-                color: black !important;
-            }
-            .slide-container {
+                break-inside: avoid;
+                page-break-inside: avoid;
                 box-shadow: none !important;
-                border: none !important;
+                border: 1px solid #D3E4DB !important;
                 background: white !important;
-                width: 100% !important;
-                height: auto !important;
-                margin: 0 !important;
-                padding: 2rem !important;
+                margin-bottom: 2rem !important;
             }
         }
     </style>
 </head>
 <body class="h-full flex flex-col overflow-hidden">
 
-    <!-- Top Navigation Header -->
     <header class="no-print bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 z-10">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded bg-brand-dark flex items-center justify-center text-white font-serif font-bold text-lg">M</div>
@@ -101,133 +139,81 @@
         </div>
         
         <div class="flex items-center gap-4">
-            <!-- Search Bar -->
-            <div class="relative w-48 md:w-64">
-                <input type="text" id="slideSearch" placeholder="Search slides..." class="w-full text-xs bg-gray-50 border border-gray-300 rounded px-3 py-1.5 pl-8 focus:outline-none focus:ring-1 focus:ring-brand-dark focus:border-brand-dark transition-all">
-                <i data-lucide="search" class="absolute left-2.5 top-2 w-3.5 h-3.5 text-gray-400"></i>
-                <button id="clearSearch" class="hidden absolute right-2 top-2 text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+            <div class="bg-brand-light text-brand-dark px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5">
+                <i data-lucide="monitor" class="w-3.5 h-3.5"></i> Slide View
             </div>
-            
-            <!-- View Mode Switcher -->
-            <div class="flex bg-gray-100 p-0.5 rounded text-xs font-medium">
-                <button id="modeSlide" class="px-3 py-1 rounded bg-white shadow-sm text-brand-dark flex items-center gap-1.5 transition-all">
-                    <i data-lucide="monitor" class="w-3 h-3"></i> Slide View
-                </button>
-                <button id="modeHandout" class="px-3 py-1 rounded text-brand-muted hover:text-brand-dark flex items-center gap-1.5 transition-all">
-                    <i data-lucide="file-text" class="w-3 h-3"></i> Handout View
-                </button>
-            </div>
-
-            <!-- Print/PDF Export Button -->
-            <button onclick="window.print()" class="p-1.5 rounded border border-gray-300 hover:bg-gray-50 transition-all text-brand-dark" title="Export PDF / Print">
-                <i data-lucide="printer" class="w-4 h-4"></i>
-            </button>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex overflow-hidden relative">
+        <div id="sidebarHoverZone" class="no-print absolute left-0 top-0 w-6 h-full z-30 bg-transparent"></div>
         
-        <!-- Collapsible Sidebar (Slide Navigation) -->
-        <aside id="sidebar" class="no-print w-72 bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300 relative z-10 shrink-0">
+        <aside id="sidebar" class="no-print w-0 -translate-x-full bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300 relative z-10 shrink-0">
             <div class="p-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="text-xs uppercase font-bold text-brand-dark tracking-wider">Slide Index</h3>
                 <span id="slideCounter" class="text-xs text-brand-muted font-mono font-medium">01/21</span>
             </div>
             
             <div id="slideList" class="flex-1 overflow-y-auto p-2 space-y-1">
-                <!-- Dynamically Populated Slide Links -->
-            </div>
-            
-            <!-- Sidebar Footer with Controls Guide -->
-            <div class="p-4 border-t border-gray-100 bg-gray-50 text-[10px] text-brand-muted">
-                <p class="font-medium uppercase tracking-wider mb-1">Keyboard Shortcuts</p>
-                <div class="grid grid-cols-2 gap-1 font-mono">
-                    <div>Next: <span class="bg-gray-200 px-1 rounded">→</span> / <span class="bg-gray-200 px-1 rounded">Space</span></div>
-                    <div>Prev: <span class="bg-gray-200 px-1 rounded">←</span></div>
-                    <div>Search: <span class="bg-gray-200 px-1 rounded">/</span></div>
-                    <div>Notes: <span class="bg-gray-200 px-1 rounded">N</span></div>
                 </div>
-            </div>
-
-            <!-- Sidebar Collapse Handle -->
+            
             <button id="sidebarToggle" class="absolute -right-3 top-1/2 transform -translate-y-1/2 w-6 h-12 bg-white border border-gray-200 rounded-r-md flex items-center justify-center shadow-sm hover:bg-gray-50 z-20">
-                <i data-lucide="chevron-left" id="sidebarToggleIcon" class="w-4 h-4 text-brand-muted"></i>
+                <i data-lucide="chevron-right" id="sidebarToggleIcon" class="w-4 h-4 text-brand-muted"></i>
             </button>
         </aside>
 
-        <!-- Slide Stage Area -->
         <main class="flex-1 overflow-y-auto p-4 md:p-8 flex items-center justify-center bg-brand-canvas relative" id="stage">
-            
-            <!-- Search Results Toast Overlay -->
-            <div id="searchResultsToast" class="hidden absolute top-4 left-1/2 transform -translate-x-1/2 bg-brand-dark text-white text-xs px-4 py-2 rounded-full shadow-lg z-30 flex items-center gap-2">
-                <i data-lucide="filter" class="w-3.5 h-3.5"></i>
-                <span id="searchResultText"></span>
-                <button id="resetSearchFilter" class="hover:text-brand-light font-bold underline ml-2">Reset</button>
-            </div>
 
-            <!-- Standard 16:9 Presentation Canvas Container -->
-            <div id="deckContainer" class="w-full max-w-5xl aspect-[16/10] bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col justify-between p-8 md:p-12 relative overflow-hidden transition-all duration-300">
+            <div id="deckContainer" class="w-full max-w-6xl aspect-[16/10] bg-white border border-gray-200 rounded-lg shadow-sm flex flex-col justify-between p-8 md:p-12 relative overflow-hidden transition-all duration-300">
                 
-                <!-- Dynamic Header Bar on Slide -->
                 <div class="flex items-start justify-between border-b border-gray-100 pb-4 h-16 shrink-0">
                     <div>
-                        <span id="slideCategory" class="text-[10px] tracking-widest uppercase font-semibold text-brand-muted"></span>
-                        <h2 id="slideTitle" class="slide-title text-xl md:text-2xl font-bold text-brand-dark mt-0.5"></h2>
+                        <span id="slideCategory" class="text-xs tracking-widest uppercase font-semibold text-brand-muted"></span>
+                        <h2 id="slideTitle" class="slide-title text-2xl md:text-3xl font-bold text-brand-dark mt-0.5"></h2>
                     </div>
                     <div class="text-right">
-                        <span id="slideSub" class="text-[10px] tracking-widest uppercase font-medium text-brand-dark bg-brand-light px-2.5 py-1 rounded"></span>
+                        <span id="slideSub" class="text-xs tracking-widest uppercase font-semibold text-brand-dark bg-brand-light px-3 py-1 rounded"></span>
                     </div>
                 </div>
 
-                <!-- Slide Body (Dynamic content area injected here) -->
                 <div id="slideContent" class="flex-1 py-6 flex flex-col justify-center overflow-y-auto fade-transition">
-                    <!-- Dynamic Slide HTML Injected Here -->
-                </div>
+                    </div>
 
-                <!-- Slide Footer Bar -->
-                <div class="flex items-center justify-between border-t border-gray-100 pt-4 text-[10px] tracking-wider text-brand-muted shrink-0">
+                <div class="flex items-center justify-between border-t border-gray-100 pt-4 text-xs tracking-wider text-brand-muted shrink-0">
                     <div class="font-medium">MAILORA STRATEGIC INITIATIVE</div>
                     <div class="italic">Prepared by Sayed Shakir &bull; Confidential</div>
                     <div id="slideIndexFooter" class="font-mono font-semibold text-brand-dark">01 of 21</div>
                 </div>
             </div>
 
-            <!-- Handout (Continuous Document) Mode Container -->
-            <div id="handoutContainer" class="hidden w-full max-w-4xl space-y-12 py-8">
-                <!-- All slides rendered in direct vertical order -->
-            </div>
+            <div id="handoutContainer" class="hidden space-y-12 py-8">
+                </div>
 
-            <!-- Dynamic Tactical/Notes Popover Block -->
             <div id="notesPanel" class="no-print hidden absolute right-6 bottom-20 w-80 bg-white border border-gray-200 rounded-lg shadow-xl p-4 z-20">
                 <div class="flex items-center justify-between border-b border-gray-100 pb-2 mb-2">
                     <h4 class="text-xs uppercase font-bold text-brand-dark flex items-center gap-1"><i data-lucide="book-open" class="w-3.5 h-3.5"></i> Presenter / Strategic Notes</h4>
                     <button id="closeNotes" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
                 </div>
                 <div id="notesContent" class="text-xs text-brand-muted leading-relaxed space-y-2 max-h-60 overflow-y-auto">
-                    <!-- Injected Presenter Notes -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Slide Navigation Sticky controls -->
             <div class="no-print absolute bottom-4 right-4 flex items-center gap-2 bg-white/95 backdrop-blur-sm border border-gray-200 p-1.5 rounded-lg shadow-md z-10">
-                <button id="btnPrev" class="p-1.5 rounded hover:bg-gray-100 text-brand-dark disabled:opacity-30 disabled:hover:bg-transparent" title="Previous Slide (←)"><i data-lucide="arrow-left" class="w-4 h-4"></i></button>
+                <button id="btnPrev" class="p-1.5 rounded hover:bg-gray-100 text-brand-dark disabled:opacity-30 disabled:hover:bg-transparent" title="Previous Slide"><i data-lucide="arrow-left" class="w-4 h-4"></i></button>
                 <div class="h-4 w-[1px] bg-gray-200"></div>
-                <button id="btnNotes" class="p-1.5 rounded hover:bg-gray-100 text-brand-dark" title="Toggle Tactical Notes (N)"><i data-lucide="book-open" class="w-4 h-4"></i></button>
+                <button id="btnNotes" class="p-1.5 rounded hover:bg-gray-100 text-brand-dark" title="Toggle Tactical Notes"><i data-lucide="book-open" class="w-4 h-4"></i></button>
                 <button id="btnPlay" class="p-1.5 rounded hover:bg-gray-100 text-brand-dark" title="Autoplay"><i data-lucide="play" class="w-4 h-4" id="playIcon"></i></button>
-                <button id="btnFullscreen" class="p-1.5 rounded hover:bg-gray-100 text-brand-dark" title="Fullscreen presentation (F)"><i data-lucide="maximize" class="w-4 h-4"></i></button>
+                <button id="btnFullscreen" class="p-1.5 rounded hover:bg-gray-100 text-brand-dark" title="Fullscreen presentation"><i data-lucide="maximize" class="w-4 h-4"></i></button>
                 <div class="h-4 w-[1px] bg-gray-200"></div>
-                <button id="btnNext" class="p-1.5 rounded hover:bg-gray-100 text-brand-dark disabled:opacity-30 disabled:hover:bg-transparent" title="Next Slide (→)"><i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+                <button id="btnNext" class="p-1.5 rounded hover:bg-gray-100 text-brand-dark disabled:opacity-30 disabled:hover:bg-transparent" title="Next Slide"><i data-lucide="arrow-right" class="w-4 h-4"></i></button>
             </div>
         </main>
     </div>
 
-    <!-- Active progress tracking line -->
     <div class="no-print h-1 bg-gray-100 w-full relative shrink-0">
         <div id="progressBar" class="h-full bg-brand-dark w-0 transition-all duration-300"></div>
     </div>
 
-    <!-- Database definitions for the 21 slides -->
     <script>
         const SLIDE_DATA = [
             {
@@ -239,17 +225,17 @@
                 notes: "This cover slide lays out the thematic and structural blueprint of the Mailora presentation. Focus on premium minimalist positioning that directly correlates operational deliverability tools with compounding enterprise valuation vectors.",
                 content: `
                     <div class="text-center py-12 flex flex-col justify-center items-center h-full">
-                        <div class="inline-block px-3 py-1 bg-brand-light text-brand-dark text-xs uppercase tracking-widest font-semibold rounded mb-6">Strategic Proposal</div>
-                        <h1 class="slide-title text-4xl md:text-5xl font-extrabold text-brand-dark leading-tight max-w-3xl mb-4">
+                        <div class="inline-block px-4 py-1.5 bg-brand-light text-brand-dark text-sm uppercase tracking-widest font-bold rounded mb-6">Strategic Proposal</div>
+                        <h1 class="slide-title text-5xl md:text-6xl font-extrabold text-brand-dark leading-tight max-w-4xl mb-6">
                             Trust, Distribution & Revenue Infrastructure
                         </h1>
-                        <p class="text-lg text-brand-muted max-w-xl mb-8">
+                        <p class="text-xl md:text-2xl text-brand-muted max-w-2xl mb-10 leading-relaxed">
                             A Comprehensive Program to Establish Compounding GTM Leverage and Automate Pipeline Operations
                         </p>
-                        <div class="w-24 h-[2px] bg-brand-dark mb-8"></div>
-                        <div class="text-sm">
-                            <p class="font-semibold text-brand-dark">Prepared by Sayed Shakir</p>
-                            <p class="text-xs text-brand-muted mt-1">GTM Advisory & Strategy Group</p>
+                        <div class="w-32 h-[3px] bg-brand-dark mb-10"></div>
+                        <div class="text-base md:text-lg">
+                            <p class="font-bold text-brand-dark">Prepared by Sayed Shakir</p>
+                            <p class="text-sm text-brand-muted mt-1">GTM Advisory & Strategy Group</p>
                         </div>
                     </div>
                 `
@@ -263,26 +249,26 @@
                 notes: "Explain that scaling a deliverability business isn't just about building an outbound sales team. It's about engineering institutional trust, being highly visible where buyers research, and having an integrated pipeline automation system.",
                 content: `
                     <div class="grid md:grid-cols-2 gap-8 items-center h-full">
-                        <div class="space-y-4">
-                            <h3 class="text-brand-dark text-lg font-serif italic border-l-2 border-brand-dark pl-3">
+                        <div class="space-y-6">
+                            <h3 class="text-brand-dark text-xl md:text-2xl font-serif italic border-l-4 border-brand-dark pl-4 leading-relaxed">
                                 Why deliverability companies must scale through trust, ecosystem visibility, and operational GTM infrastructure.
                             </h3>
-                            <p class="text-sm text-brand-muted leading-relaxed">
+                            <p class="text-base text-brand-muted leading-relaxed">
                                 Mailora currently has excellent baseline product features (inbox monitoring, deliverability diagnostics, API-driven intelligence). However, product capability alone cannot sustain rapid market expansion without the supporting growth infrastructure.
                             </p>
-                            <div class="p-3 bg-brand-light rounded border-l-4 border-brand-dark text-xs">
-                                <span class="font-bold text-brand-dark block mb-0.5">Strategic Takeaway</span>
+                            <div class="p-4 bg-brand-light rounded border-l-4 border-brand-dark text-sm leading-relaxed">
+                                <span class="font-bold text-brand-dark block mb-1 text-base">Strategic Takeaway</span>
                                 Sustainable enterprise valuation is unlocked when GTM systems become as programmatic and automated as the software itself.
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 gap-3">
-                            <div class="bg-white border border-gray-200 p-4 rounded hover:border-brand-dark transition-all">
-                                <span class="text-xs uppercase tracking-wider font-semibold text-brand-dark">The Challenge</span>
-                                <p class="text-xs text-brand-muted mt-1">High reliance on manual, linear outbound acquisition systems blocks exponential scale and increases customer acquisition costs.</p>
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="bg-white border border-gray-200 p-5 rounded-lg hover:border-brand-dark transition-all shadow-sm">
+                                <span class="text-xs uppercase tracking-wider font-bold text-brand-dark bg-gray-100 px-2 py-0.5 rounded">The Challenge</span>
+                                <p class="text-sm md:text-base text-brand-muted mt-2 leading-relaxed">High reliance on manual, linear outbound acquisition systems blocks exponential scale and increases customer acquisition costs.</p>
                             </div>
-                            <div class="bg-white border border-gray-200 p-4 rounded hover:border-brand-dark transition-all">
-                                <span class="text-xs uppercase tracking-wider font-semibold text-brand-dark">The Resolution</span>
-                                <p class="text-xs text-brand-muted mt-1">Establish sequential infrastructure layers targeting Trust (Validation), Visibility (AI Search Indexation), and Operational Revenue Systems.</p>
+                            <div class="bg-white border border-gray-200 p-5 rounded-lg hover:border-brand-dark transition-all shadow-sm">
+                                <span class="text-xs uppercase tracking-wider font-bold text-brand-dark bg-brand-light px-2 py-0.5 rounded text-brand-dark">The Resolution</span>
+                                <p class="text-sm md:text-base text-brand-muted mt-2 leading-relaxed">Establish sequential infrastructure layers targeting Trust (Validation), Visibility (AI Search Indexation), and Operational Revenue Systems.</p>
                             </div>
                         </div>
                     </div>
@@ -297,25 +283,25 @@
                 notes: "Reference the shift in search: buyers search inside ChatGPT, Claude, standard directories, and Reddit rather than trusting isolated Google ads. Mailora must have a strong presence here.",
                 content: `
                     <div class="space-y-6 h-full flex flex-col justify-center">
-                        <div class="text-center max-w-2xl mx-auto mb-4">
-                            <h3 class="text-brand-dark text-xl font-serif">From Closed Funnels to Ecosystem Validation</h3>
-                            <p class="text-xs text-brand-muted mt-1">Modern procurement operates in high-trust, decentralized operator networks rather than isolated vendor channels.</p>
+                        <div class="text-center max-w-3xl mx-auto mb-6">
+                            <h3 class="text-brand-dark text-2xl md:text-3xl font-serif">From Closed Funnels to Ecosystem Validation</h3>
+                            <p class="text-sm md:text-base text-brand-muted mt-2">Modern procurement operates in high-trust, decentralized operator networks rather than isolated vendor channels.</p>
                         </div>
-                        <div class="grid md:grid-cols-3 gap-4">
-                            <div class="border border-gray-100 bg-brand-canvas p-5 rounded relative">
-                                <div class="text-brand-dark text-2xl font-bold font-mono mb-2">01</div>
-                                <h4 class="text-xs font-bold text-brand-dark uppercase tracking-wider mb-2">Decentralized Trust</h4>
-                                <p class="text-xs text-brand-muted leading-relaxed">Buyers cross-reference reviews, communities, and agency operators before engaging with a sales representative.</p>
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="border border-gray-200 bg-brand-canvas p-6 rounded-lg shadow-sm">
+                                <div class="text-brand-dark text-3xl font-bold font-mono mb-3">01</div>
+                                <h4 class="text-sm font-bold text-brand-dark uppercase tracking-wider mb-2">Decentralized Trust</h4>
+                                <p class="text-sm text-brand-muted leading-relaxed">Buyers cross-reference reviews, communities, and agency operators before engaging with a sales representative.</p>
                             </div>
-                            <div class="border border-gray-100 bg-brand-canvas p-5 rounded relative">
-                                <div class="text-brand-dark text-2xl font-bold font-mono mb-2">02</div>
-                                <h4 class="text-xs font-bold text-brand-dark uppercase tracking-wider mb-2">Al-Driven Sourcing</h4>
-                                <p class="text-xs text-brand-muted leading-relaxed">System choices are heavily pre-filtered by search crawlers, LLM recommendations, and community networks.</p>
+                            <div class="border border-gray-200 bg-brand-canvas p-6 rounded-lg shadow-sm">
+                                <div class="text-brand-dark text-3xl font-bold font-mono mb-3">02</div>
+                                <h4 class="text-sm font-bold text-brand-dark uppercase tracking-wider mb-2">Al-Driven Sourcing</h4>
+                                <p class="text-sm text-brand-muted leading-relaxed">System choices are heavily pre-filtered by search crawlers, LLM recommendations, and community networks.</p>
                             </div>
-                            <div class="border border-gray-100 bg-brand-canvas p-5 rounded relative">
-                                <div class="text-brand-dark text-2xl font-bold font-mono mb-2">03</div>
-                                <h4 class="text-xs font-bold text-brand-dark uppercase tracking-wider mb-2">Integrations Core</h4>
-                                <p class="text-xs text-brand-muted leading-relaxed">The software tool is evaluated as an integrated piece of a wider tech-stack (e.g. Clay, Smartlead, HubSpot).</p>
+                            <div class="border border-gray-200 bg-brand-canvas p-6 rounded-lg shadow-sm">
+                                <div class="text-brand-dark text-3xl font-bold font-mono mb-3">03</div>
+                                <h4 class="text-sm font-bold text-brand-dark uppercase tracking-wider mb-2">Integrations Core</h4>
+                                <p class="text-sm text-brand-muted leading-relaxed">The software tool is evaluated as an integrated piece of a wider tech-stack (e.g. Clay, Smartlead, HubSpot).</p>
                             </div>
                         </div>
                     </div>
@@ -330,29 +316,29 @@
                 notes: "Make it clear that Mailora should transition in identity: not just 'another deliverability tracking tool' but the infrastructure foundation for outbound operations.",
                 content: `
                     <div class="grid md:grid-cols-2 gap-8 items-center h-full">
-                        <div>
-                            <span class="text-xs uppercase tracking-wider font-semibold text-brand-dark bg-brand-light px-2 py-0.5 rounded">Core Opportunity</span>
-                            <h3 class="text-brand-dark text-2xl font-serif mt-3 mb-4">Capturing the Deliverability Engine Tier</h3>
-                            <p class="text-sm text-brand-muted leading-relaxed mb-4">
+                        <div class="space-y-4">
+                            <span class="text-xs uppercase tracking-wider font-bold text-brand-dark bg-brand-light px-2.5 py-1 rounded">Core Opportunity</span>
+                            <h3 class="text-brand-dark text-3xl font-serif mt-3 mb-4">Capturing the Deliverability Engine Tier</h3>
+                            <p class="text-base text-brand-muted leading-relaxed mb-4">
                                 Mailora currently solves a fundamental operational problem for outbound-heavy teams: inbox placement monitoring, deliverability diagnostics, and multi-domain infrastructure visibility.
                             </p>
-                            <p class="text-xs text-brand-muted">
+                            <p class="text-sm text-brand-muted leading-relaxed">
                                 By transitioning the platform messaging toward <strong>Deliverability Infrastructure</strong>, we establish long-term integration value and move out of the volatile "point-solution" tool category.
                             </p>
                         </div>
-                        <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg space-y-4">
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-brand-dark border-b border-gray-200 pb-2">Target Workflow Integrations</h4>
-                            <div class="flex items-center gap-3 text-xs">
-                                <span class="w-6 h-6 rounded-full bg-brand-dark text-white flex items-center justify-center text-[10px] font-bold">1</span>
-                                <span class="text-brand-muted">Embedded API delivery systems for Smartlead / Instantly</span>
+                        <div class="bg-gray-50 border border-gray-200 p-6 md:p-8 rounded-lg space-y-4">
+                            <h4 class="text-sm font-bold uppercase tracking-wider text-brand-dark border-b border-gray-200 pb-2">Target Workflow Integrations</h4>
+                            <div class="flex items-center gap-3 text-sm">
+                                <span class="w-7 h-7 rounded-full bg-brand-dark text-white flex items-center justify-center text-xs font-bold shrink-0">1</span>
+                                <span class="text-brand-muted font-medium">Embedded API delivery systems for Smartlead / Instantly</span>
                             </div>
-                            <div class="flex items-center gap-3 text-xs">
-                                <span class="w-6 h-6 rounded-full bg-brand-dark text-white flex items-center justify-center text-[10px] font-bold">2</span>
-                                <span class="text-brand-muted">Dynamic infrastructure logs synced with Clay workspaces</span>
+                            <div class="flex items-center gap-3 text-sm">
+                                <span class="w-7 h-7 rounded-full bg-brand-dark text-white flex items-center justify-center text-xs font-bold shrink-0">2</span>
+                                <span class="text-brand-muted font-medium">Dynamic infrastructure logs synced with Clay workspaces</span>
                             </div>
-                            <div class="flex items-center gap-3 text-xs">
-                                <span class="w-6 h-6 rounded-full bg-brand-dark text-white flex items-center justify-center text-[10px] font-bold">3</span>
-                                <span class="text-brand-muted">CRM automation rules responding to diagnostic metrics</span>
+                            <div class="flex items-center gap-3 text-sm">
+                                <span class="w-7 h-7 rounded-full bg-brand-dark text-white flex items-center justify-center text-xs font-bold shrink-0">3</span>
+                                <span class="text-brand-muted font-medium">CRM automation rules responding to diagnostic metrics</span>
                             </div>
                         </div>
                     </div>
@@ -367,26 +353,26 @@
                 notes: "Analyze current constraints: pure outbound relies heavily on direct sales cycles. Without peer reviews (trust), community context (visibility), or structured funnels, conversions stall.",
                 content: `
                     <div class="space-y-6 h-full flex flex-col justify-center">
-                        <div class="border-l-4 border-brand-dark pl-4">
-                            <p class="text-xs uppercase tracking-widest font-semibold text-brand-dark">Root Cause Diagnosis</p>
-                            <h3 class="text-brand-dark text-lg font-serif">Why pure outbound pipelines fail to generate compounding asset value</h3>
+                        <div class="border-l-4 border-brand-dark pl-4 mb-2">
+                            <p class="text-xs uppercase tracking-widest font-bold text-brand-dark">Root Cause Diagnosis</p>
+                            <h3 class="text-brand-dark text-xl md:text-2xl font-serif mt-1">Why pure outbound pipelines fail to generate compounding asset value</h3>
                         </div>
-                        <div class="grid md:grid-cols-4 gap-3">
-                            <div class="bg-white border border-gray-200 p-4 rounded shadow-sm">
-                                <h4 class="text-xs font-bold text-brand-dark mb-1">Unvalidated Footprint</h4>
-                                <p class="text-[11px] text-brand-muted leading-relaxed">Limited directory presence and structured peer validation trigger customer skepticism during early procurement steps.</p>
+                        <div class="grid md:grid-cols-4 gap-4">
+                            <div class="bg-white border border-gray-200 p-5 rounded-lg shadow-sm">
+                                <h4 class="text-sm font-bold text-brand-dark mb-2 border-b pb-1">Unvalidated Footprint</h4>
+                                <p class="text-xs md:text-sm text-brand-muted leading-relaxed">Limited directory presence and structured peer validation trigger customer skepticism during early procurement steps.</p>
                             </div>
-                            <div class="bg-white border border-gray-200 p-4 rounded shadow-sm">
-                                <h4 class="text-xs font-bold text-brand-dark mb-1">Activation Frictions</h4>
-                                <p class="text-[11px] text-brand-muted leading-relaxed">Free trials fail to retain accounts because the platform fails to contextually highlight core delivery issues quickly.</p>
+                            <div class="bg-white border border-gray-200 p-5 rounded-lg shadow-sm">
+                                <h4 class="text-sm font-bold text-brand-dark mb-2 border-b pb-1">Activation Frictions</h4>
+                                <p class="text-xs md:text-sm text-brand-muted leading-relaxed">Free trials fail to retain accounts because the platform fails to contextually highlight core delivery issues quickly.</p>
                             </div>
-                            <div class="bg-white border border-gray-200 p-4 rounded shadow-sm">
-                                <h4 class="text-xs font-bold text-brand-dark mb-1">Ecosystem Disconnection</h4>
-                                <p class="text-[11px] text-brand-muted leading-relaxed">No automated channel partner referral systems exist, keeping acquisition heavily reliant on manual direct sales efforts.</p>
+                            <div class="bg-white border border-gray-200 p-5 rounded-lg shadow-sm">
+                                <h4 class="text-sm font-bold text-brand-dark mb-2 border-b pb-1">Ecosystem Disconnection</h4>
+                                <p class="text-xs md:text-sm text-brand-muted leading-relaxed">No automated channel partner referral systems exist, keeping acquisition heavily reliant on manual direct sales efforts.</p>
                             </div>
-                            <div class="bg-white border border-gray-200 p-4 rounded shadow-sm">
-                                <h4 class="text-xs font-bold text-brand-dark mb-1">Fragmented Systems</h4>
-                                <p class="text-[11px] text-brand-muted leading-relaxed">Marketing intent data points, CRM events, and outbound systems operate as disconnected, manual silos.</p>
+                            <div class="bg-white border border-gray-200 p-5 rounded-lg shadow-sm">
+                                <h4 class="text-sm font-bold text-brand-dark mb-2 border-b pb-1">Fragmented Systems</h4>
+                                <p class="text-xs md:text-sm text-brand-muted leading-relaxed">Marketing intent data points, CRM events, and outbound systems operate as disconnected, manual silos.</p>
                             </div>
                         </div>
                     </div>
@@ -398,32 +384,31 @@
                 subCategory: "The Framework",
                 title: "The Growth Infrastructure Framework",
                 sub: "Architecture",
-                notes: "This explains our 3 engagement models. Each builds systematically on top of the last: trust, then visibility, and finally fully integrated revenue operations.",
+                notes: "This explains our 3 engagement modules. Each builds systematically on top of the last: trust, then visibility, and finally fully integrated revenue operations.",
                 content: `
                     <div class="space-y-6 h-full flex flex-col justify-center">
-                        <div class="text-center mb-2">
-                            <h3 class="text-brand-dark text-xl font-serif">Architecting the Scale Engine</h3>
-                            <p class="text-xs text-brand-muted mt-0.5">A sequential, three-tiered framework to transition Mailora's GTM footprint.</p>
+                        <div class="text-center mb-4">
+                            <h3 class="text-brand-dark text-2xl md:text-3xl font-serif">Architecting the Scale Engine</h3>
+                            <p class="text-sm md:text-base text-brand-muted mt-1">A sequential, three-tiered framework to transition Mailora's GTM footprint.</p>
                         </div>
                         <div class="grid md:grid-cols-3 gap-6 relative">
-                            <!-- Arrow Overlays using CSS borders on desktop if needed -->
-                            <div class="bg-white border border-gray-200 p-5 rounded-lg shadow-sm relative hover:border-brand-dark transition-all">
-                                <div class="absolute -top-3 left-4 bg-brand-dark text-white text-[9px] font-mono font-bold px-2 py-0.5 rounded">LAYER 1</div>
-                                <h4 class="text-xs font-bold text-brand-dark uppercase tracking-wider mb-2 mt-1">Trust & Distribution</h4>
-                                <p class="text-xs text-brand-muted leading-relaxed mb-3">Foundational trust systems to optimize directories, conversion funnels, and agency relationships.</p>
-                                <span class="text-[10px] text-brand-dark bg-brand-light px-2 py-0.5 rounded font-mono font-semibold">Model I (3 Months)</span>
+                            <div class="bg-white border border-gray-200 p-6 rounded-lg shadow-sm relative hover:border-brand-dark transition-all pt-8">
+                                <div class="absolute -top-3 left-4 bg-brand-dark text-white text-[10px] font-mono font-bold px-2.5 py-0.5 rounded">MODULE 1</div>
+                                <h4 class="text-sm font-bold text-brand-dark uppercase tracking-wider mb-2">Trust & Distribution</h4>
+                                <p class="text-sm text-brand-muted leading-relaxed mb-4">Foundational trust systems to optimize directories, conversion funnels, and agency relationships.</p>
+                                <span class="text-xs text-brand-dark bg-brand-light px-2.5 py-1 rounded font-mono font-bold">Module I (3 Months)</span>
                             </div>
-                            <div class="bg-white border border-gray-200 p-5 rounded-lg shadow-sm relative hover:border-brand-dark transition-all">
-                                <div class="absolute -top-3 left-4 bg-brand-dark text-white text-[9px] font-mono font-bold px-2 py-0.5 rounded">LAYER 2</div>
-                                <h4 class="text-xs font-bold text-brand-dark uppercase tracking-wider mb-2 mt-1">Authority & Visibility</h4>
-                                <p class="text-xs text-brand-muted leading-relaxed mb-3">Expanding digital footprints, establishing AI discoverability search optimizations, and user-driven communities.</p>
-                                <span class="text-[10px] text-brand-dark bg-brand-light px-2 py-0.5 rounded font-mono font-semibold">Model II (6 Months)</span>
+                            <div class="bg-white border border-gray-200 p-6 rounded-lg shadow-sm relative hover:border-brand-dark transition-all pt-8">
+                                <div class="absolute -top-3 left-4 bg-brand-dark text-white text-[10px] font-mono font-bold px-2.5 py-0.5 rounded">MODULE 2</div>
+                                <h4 class="text-sm font-bold text-brand-dark uppercase tracking-wider mb-2">Authority & Visibility</h4>
+                                <p class="text-sm text-brand-muted leading-relaxed mb-4">Expanding digital footprints, establishing AI discoverability search optimizations, and user-driven communities.</p>
+                                <span class="text-xs text-brand-dark bg-brand-light px-2.5 py-1 rounded font-mono font-bold">Module II (6 Months)</span>
                             </div>
-                            <div class="bg-white border border-gray-200 p-5 rounded-lg shadow-sm relative hover:border-brand-dark transition-all">
-                                <div class="absolute -top-3 left-4 bg-brand-dark text-white text-[9px] font-mono font-bold px-2 py-0.5 rounded">LAYER 3</div>
-                                <h4 class="text-xs font-bold text-brand-dark uppercase tracking-wider mb-2 mt-1">Revenue Operations</h4>
-                                <p class="text-xs text-brand-muted leading-relaxed mb-3">Unifying inbound signals, de-anonymizing accounts, integrating CRM, and automate pipeline workflows.</p>
-                                <span class="text-[10px] text-brand-dark bg-brand-light px-2 py-0.5 rounded font-mono font-semibold">Model III (6 Months)</span>
+                            <div class="bg-white border border-gray-200 p-6 rounded-lg shadow-sm relative hover:border-brand-dark transition-all pt-8">
+                                <div class="absolute -top-3 left-4 bg-brand-dark text-white text-[10px] font-mono font-bold px-2.5 py-0.5 rounded">MODULE 3</div>
+                                <h4 class="text-sm font-bold text-brand-dark uppercase tracking-wider mb-2">Revenue Operations</h4>
+                                <p class="text-sm text-brand-muted leading-relaxed mb-4">Unifying inbound signals, de-anonymizing accounts, integrating CRM, and automate pipeline workflows.</p>
+                                <span class="text-xs text-brand-dark bg-brand-light px-2.5 py-1 rounded font-mono font-bold">Module III (6 Months)</span>
                             </div>
                         </div>
                     </div>
@@ -433,45 +418,45 @@
                 index: 7,
                 category: "STRATEGIC ROADMAP",
                 subCategory: "Engagement Index",
-                title: "Engagement Model Comparison Matrix",
+                title: "Engagement Module Comparison Matrix",
                 sub: "Strategy Index",
-                notes: "Walk the board through this comparison matrix. Clearly show that Model 3 is the ultimate destination, representing the full-funnel Revenue Operations setup.",
+                notes: "Walk the board through this comparison matrix. Clearly show that Module 3 is the ultimate destination, representing the full-funnel Revenue Operations setup.",
                 content: `
                     <div class="space-y-4 h-full flex flex-col justify-center">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse text-[11px]">
+                        <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                            <table class="w-full text-left border-collapse text-xs md:text-sm">
                                 <thead>
-                                    <tr class="border-b border-brand-dark text-brand-dark font-bold uppercase tracking-wider">
-                                        <th class="py-2">Dimension</th>
-                                        <th class="py-2">Model I (Trust & Dist.)</th>
-                                        <th class="py-2">Model II (Visibility)</th>
-                                        <th class="py-2">Model III (Revenue Ops)</th>
+                                    <tr class="border-b-2 border-brand-dark bg-gray-50 text-brand-dark font-bold uppercase tracking-wider">
+                                        <th class="p-4">Dimension</th>
+                                        <th class="p-4">Module I (Trust & Dist.)</th>
+                                        <th class="p-4">Module II (Visibility)</th>
+                                        <th class="p-4">Module III (Revenue Ops)</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-100 text-brand-muted">
-                                    <tr>
-                                        <td class="py-2 font-bold text-brand-dark">Focus Layer</td>
-                                        <td class="py-2">Standard Validation & Funnels</td>
-                                        <td class="py-2">Organic Reach & AI Search Footprint</td>
-                                        <td class="py-2">Integrated Allbound Data Automations</td>
+                                <tbody class="divide-y divide-gray-200 text-brand-muted">
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="p-4 font-bold text-brand-dark">Focus Layer</td>
+                                        <td class="p-4">Standard Validation & Funnels</td>
+                                        <td class="p-4">Organic Reach & AI Search Footprint</td>
+                                        <td class="p-4">Integrated Allbound Data Automations</td>
                                     </tr>
-                                    <tr>
-                                        <td class="py-2 font-bold text-brand-dark">GTM Engine</td>
-                                        <td class="py-2">Onboarding Sequences & Referral Kits</td>
-                                        <td class="py-2">Social Profiles, SEO Logs & communities</td>
-                                        <td class="py-2">Visitor Analytics, CRM sync, Clay automations</td>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="p-4 font-bold text-brand-dark">GTM Engine</td>
+                                        <td class="p-4">Onboarding Sequences & Referral Kits</td>
+                                        <td class="p-4">Social Profiles, SEO Logs & communities</td>
+                                        <td class="p-4">Visitor Analytics, CRM sync, Clay automations</td>
                                     </tr>
-                                    <tr>
-                                        <td class="py-2 font-bold text-brand-dark">Key Tools</td>
-                                        <td class="py-2">G2, Capterra, Email systems</td>
-                                        <td class="py-2">YouTube, Substack, LinkedIn group, AI crawlers</td>
-                                        <td class="py-2">HubSpot, Clay, Vector/RB2B, OutboundSync</td>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="p-4 font-bold text-brand-dark">Key Tools</td>
+                                        <td class="p-4">G2, Capterra, Email systems</td>
+                                        <td class="p-4">YouTube, Substack, LinkedIn group, AI crawlers</td>
+                                        <td class="p-4">HubSpot, Clay, Vector/RB2B, OutboundSync</td>
                                     </tr>
-                                    <tr>
-                                        <td class="py-2 font-bold text-brand-dark">Target Outcome</td>
-                                        <td class="py-2">Higher Trial-to-Paid conversions</td>
-                                        <td class="py-2">Top-of-Mind Authority & AI Discovery</td>
-                                        <td class="py-2">Automated Outbound & Revenue Intelligence</td>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="p-4 font-bold text-brand-dark">Target Outcome</td>
+                                        <td class="p-4">Higher Trial-to-Paid conversions</td>
+                                        <td class="p-4">Top-of-Mind Authority & AI Discovery</td>
+                                        <td class="p-4">Automated Outbound & Revenue Intelligence</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -483,31 +468,31 @@
                 index: 8,
                 category: "MODULE 1: TRUST & DISTRIBUTION",
                 subCategory: "Overview",
-                title: "Model I: Foundations & Funnel Logic",
+                title: "Module I: Foundations & Funnel Logic",
                 sub: "Module 1",
                 notes: "Introduce Module 1. Explain that the objective is to make Mailora easy to discover, validate, adopt, and recommend by cleaning up basic public structures.",
                 content: `
                     <div class="grid md:grid-cols-2 gap-8 items-center h-full">
                         <div class="space-y-4">
-                            <span class="text-xs uppercase tracking-wider font-semibold text-brand-dark bg-brand-light px-2.5 py-1 rounded">Foundational Layer</span>
-                            <h3 class="text-brand-dark text-2xl font-serif">Deepening Organic Traction & Trust Nodes</h3>
-                            <p class="text-sm text-brand-muted leading-relaxed">
+                            <span class="text-xs uppercase tracking-wider font-bold text-brand-dark bg-brand-light px-3 py-1 rounded">Foundational Layer</span>
+                            <h3 class="text-brand-dark text-3xl font-serif">Deepening Organic Traction & Trust Nodes</h3>
+                            <p class="text-base text-brand-muted leading-relaxed">
                                 Before scaling visitor traffic or outbound efforts, we must construct the foundational trust architecture. Without verified reviews, active directories, and converting funnels, traffic is wasted.
                             </p>
                         </div>
-                        <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                            <h4 class="text-xs font-bold text-brand-dark uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">Core System Goals</h4>
-                            <ul class="space-y-3 text-xs text-brand-muted">
-                                <li class="flex items-start gap-2">
-                                    <i data-lucide="check" class="w-3.5 h-3.5 text-brand-dark shrink-0 mt-0.5"></i>
+                        <div class="bg-gray-50 p-6 md:p-8 rounded-lg border border-gray-200 shadow-sm">
+                            <h4 class="text-sm font-bold text-brand-dark uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">Core System Goals</h4>
+                            <ul class="space-y-4 text-sm md:text-base text-brand-muted">
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="check" class="w-5 h-5 text-brand-dark shrink-0 mt-0.5"></i>
                                     <span>Establish authoritative, optimized presence across 15+ high-intent directories.</span>
                                 </li>
-                                <li class="flex items-start gap-2">
-                                    <i data-lucide="check" class="w-3.5 h-3.5 text-brand-dark shrink-0 mt-0.5"></i>
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="check" class="w-5 h-5 text-brand-dark shrink-0 mt-0.5"></i>
                                     <span>Deploy automated systems to programmatically capture high-quality peer validation.</span>
                                 </li>
-                                <li class="flex items-start gap-2">
-                                    <i data-lucide="check" class="w-3.5 h-3.5 text-brand-dark shrink-0 mt-0.5"></i>
+                                <li class="flex items-start gap-3">
+                                    <i data-lucide="check" class="w-5 h-5 text-brand-dark shrink-0 mt-0.5"></i>
                                     <span>Optimize onboarding flows to convert self-serve free accounts into paid customers.</span>
                                 </li>
                             </ul>
@@ -526,28 +511,26 @@
                     <div class="space-y-6 h-full flex flex-col justify-center">
                         <div class="grid md:grid-cols-2 gap-8">
                             <div>
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-brand-dark mb-3">Enterprise & Review Profiles</h4>
-                                <div class="grid grid-cols-2 gap-2 text-xs">
-                                    <div class="bg-brand-canvas border border-gray-100 p-2.5 rounded hover:border-brand-border transition-all">G2 Crowd</div>
-                                    <div class="bg-brand-canvas border border-gray-100 p-2.5 rounded hover:border-brand-border transition-all">Capterra</div>
-                                    <div class="bg-brand-canvas border border-gray-100 p-2.5 rounded hover:border-brand-border transition-all">Trustpilot</div>
-                                    <div class="bg-brand-canvas border border-gray-100 p-2.5 rounded hover:border-brand-border transition-all">GetApp</div>
-                                    <div class="bg-brand-canvas border border-gray-100 p-2.5 rounded hover:border-brand-border transition-all">SourceForge</div>
-                                    <div class="bg-brand-canvas border border-gray-100 p-2.5 rounded hover:border-brand-border transition-all">Alternative To</div>
+                                <h4 class="text-sm font-bold uppercase tracking-wider text-brand-dark mb-4 border-b pb-1">Enterprise & Review Profiles</h4>
+                                <div class="grid grid-cols-2 gap-3 text-sm">
+                                    <div class="bg-brand-canvas border border-gray-200 p-3 rounded-md font-medium text-center shadow-sm">G2 Crowd</div>
+                                    <div class="bg-brand-canvas border border-gray-200 p-3 rounded-md font-medium text-center shadow-sm">Capterra</div>
+                                    <div class="bg-brand-canvas border border-gray-200 p-3 rounded-md font-medium text-center shadow-sm">Trustpilot</div>
+                                    <div class="bg-brand-canvas border border-gray-200 p-3 rounded-md font-medium text-center shadow-sm">GetApp</div>
+                                    <div class="bg-brand-canvas border border-gray-200 p-3 rounded-md font-medium text-center shadow-sm">SourceForge</div>
+                                    <div class="bg-brand-canvas border border-gray-200 p-3 rounded-md font-medium text-center shadow-sm">Alternative To</div>
                                 </div>
-                                <p class="text-[11px] text-brand-muted mt-3 italic">Optimized messaging, precise product hierarchies, and consistent position mapping across all lists.</p>
+                                <p class="text-xs md:text-sm text-brand-muted mt-4 italic leading-relaxed">Optimized messaging, precise product hierarchies, and consistent position mapping across all lists.</p>
                             </div>
-                            <div>
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-brand-dark mb-3">Verification & Discovery Systems</h4>
-                                <div class="space-y-3 text-xs">
-                                    <div class="p-3 bg-gray-50 border border-gray-100 rounded">
-                                        <span class="font-semibold text-brand-dark block">Review Capture Loops</span>
-                                        <p class="text-[11px] text-brand-muted mt-0.5">Embed trigger scripts within the app targeting power-users, and run targeted outreach to agencies and strategic partners.</p>
-                                    </div>
-                                    <div class="p-3 bg-gray-50 border border-gray-100 rounded">
-                                        <span class="font-semibold text-brand-dark block">Target Metric Goal</span>
-                                        <p class="text-[11px] text-brand-muted mt-0.5">Secure 50-100 verified client testimonials across primary directories within 3 months to build institutional trust.</p>
-                                    </div>
+                            <div class="space-y-4">
+                                <h4 class="text-sm font-bold uppercase tracking-wider text-brand-dark mb-4 border-b pb-1">Verification & Discovery Systems</h4>
+                                <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm">
+                                    <span class="font-bold text-brand-dark text-sm block">Review Capture Loops</span>
+                                    <p class="text-sm text-brand-muted mt-1 leading-relaxed">Embed trigger scripts within the app targeting power-users, and run targeted outreach to agencies and strategic partners.</p>
+                                </div>
+                                <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm">
+                                    <span class="font-bold text-brand-dark text-sm block">Target Metric Goal</span>
+                                    <p class="text-sm text-brand-muted mt-1 leading-relaxed">Secure 50-100 verified client testimonials across primary directories within 3 months to build institutional trust.</p>
                                 </div>
                             </div>
                         </div>
@@ -564,29 +547,29 @@
                 content: `
                     <div class="space-y-6 h-full flex flex-col justify-center">
                         <div class="border-b border-gray-100 pb-3">
-                            <h3 class="text-brand-dark text-lg font-serif">Structural Lifecycle Onboarding Blueprint</h3>
-                            <p class="text-xs text-brand-muted">Automated nurture tracks and workflow trigger sequences designed to improve free-to-paid conversions.</p>
+                            <h3 class="text-brand-dark text-xl md:text-2xl font-serif">Structural Lifecycle Onboarding Blueprint</h3>
+                            <p class="text-sm text-brand-muted mt-1">Automated nurture tracks and workflow trigger sequences designed to improve free-to-paid conversions.</p>
                         </div>
-                        <div class="grid grid-cols-4 gap-2 text-center">
-                            <div class="bg-white border border-gray-200 p-4 rounded-lg relative hover:border-brand-dark transition-all">
-                                <span class="text-[9px] font-mono font-bold text-brand-dark bg-brand-light px-2 py-0.5 rounded-full">STAGE 1</span>
-                                <h4 class="text-xs font-bold text-brand-dark mt-2 mb-1">User Activation</h4>
-                                <p class="text-[10px] text-brand-muted leading-relaxed">Fast-track setup. Guide users to log and monitor their first primary domain inside 48 hours.</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                            <div class="bg-white border border-gray-200 p-5 rounded-lg relative hover:border-brand-dark transition-all shadow-sm">
+                                <span class="text-[10px] font-mono font-bold text-brand-dark bg-brand-light px-2.5 py-1 rounded-full">STAGE 1</span>
+                                <h4 class="text-sm font-bold text-brand-dark mt-3 mb-2">User Activation</h4>
+                                <p class="text-xs md:text-sm text-brand-muted leading-relaxed">Fast-track setup. Guide users to log and monitor their first primary domain inside 48 hours.</p>
                             </div>
-                            <div class="bg-white border border-gray-200 p-4 rounded-lg relative hover:border-brand-dark transition-all">
-                                <span class="text-[9px] font-mono font-bold text-brand-dark bg-brand-light px-2 py-0.5 rounded-full">STAGE 2</span>
-                                <h4 class="text-xs font-bold text-brand-dark mt-2 mb-1">Core Education</h4>
-                                <p class="text-[10px] text-brand-muted leading-relaxed">Quantify risks. Show real-time deliverability losses and pipeline impact dynamically.</p>
+                            <div class="bg-white border border-gray-200 p-5 rounded-lg relative hover:border-brand-dark transition-all shadow-sm">
+                                <span class="text-[10px] font-mono font-bold text-brand-dark bg-brand-light px-2.5 py-1 rounded-full">STAGE 2</span>
+                                <h4 class="text-sm font-bold text-brand-dark mt-3 mb-2">Core Education</h4>
+                                <p class="text-xs md:text-sm text-brand-muted leading-relaxed">Quantify risks. Show real-time deliverability losses and pipeline impact dynamically.</p>
                             </div>
-                            <div class="bg-white border border-gray-200 p-4 rounded-lg relative hover:border-brand-dark transition-all">
-                                <span class="text-[9px] font-mono font-bold text-brand-dark bg-brand-light px-2 py-0.5 rounded-full">STAGE 3</span>
-                                <h4 class="text-xs font-bold text-brand-dark mt-2 mb-1">Workflow Lock-In</h4>
-                                <p class="text-[10px] text-brand-muted leading-relaxed">Deeper usage. Build daily alerts, team workflows, and direct API client setups.</p>
+                            <div class="bg-white border border-gray-200 p-5 rounded-lg relative hover:border-brand-dark transition-all shadow-sm">
+                                <span class="text-[10px] font-mono font-bold text-brand-dark bg-brand-light px-2.5 py-1 rounded-full">STAGE 3</span>
+                                <h4 class="text-sm font-bold text-brand-dark mt-3 mb-2">Workflow Lock-In</h4>
+                                <p class="text-xs md:text-sm text-brand-muted leading-relaxed">Deeper usage. Build daily alerts, team workflows, and direct API client setups.</p>
                             </div>
-                            <div class="bg-white border border-gray-200 p-4 rounded-lg relative hover:border-brand-dark transition-all">
-                                <span class="text-[9px] font-mono font-bold text-brand-dark bg-brand-light px-2 py-0.5 rounded-full">STAGE 4</span>
-                                <h4 class="text-xs font-bold text-brand-dark mt-2 mb-1">Paid Conversion</h4>
-                                <p class="text-[10px] text-brand-muted leading-relaxed">Upgrade nudges triggered by domain volume, diagnostic limits, and API usage cap hits.</p>
+                            <div class="bg-white border border-gray-200 p-5 rounded-lg relative hover:border-brand-dark transition-all shadow-sm">
+                                <span class="text-[10px] font-mono font-bold text-brand-dark bg-brand-light px-2.5 py-1 rounded-full">STAGE 4</span>
+                                <h4 class="text-sm font-bold text-brand-dark mt-3 mb-2">Paid Conversion</h4>
+                                <p class="text-xs md:text-sm text-brand-muted leading-relaxed">Upgrade nudges triggered by domain volume, diagnostic limits, and API usage cap hits.</p>
                             </div>
                         </div>
                     </div>
@@ -601,25 +584,25 @@
                 notes: "Explain partner distribution: instead of fighting for every client individually, we sign agencies who each manage 10-50 high-volume outbound workspaces.",
                 content: `
                     <div class="grid md:grid-cols-2 gap-8 items-center h-full">
-                        <div>
-                            <span class="text-xs uppercase tracking-wider font-semibold text-brand-dark">Leveraging Ecosystem Nodes</span>
-                            <h3 class="text-brand-dark text-xl font-serif mt-2 mb-4">Building Automated Channels with Demand Aggregators</h3>
-                            <p class="text-sm text-brand-muted leading-relaxed mb-3">
+                        <div class="space-y-4">
+                            <span class="text-xs uppercase tracking-wider font-bold text-brand-dark bg-gray-100 px-2.5 py-1 rounded">Leveraging Ecosystem Nodes</span>
+                            <h3 class="text-brand-dark text-2xl md:text-3xl font-serif mt-2">Building Automated Channels with Demand Aggregators</h3>
+                            <p class="text-base text-brand-muted leading-relaxed">
                                 Instead of chasing individual accounts, we target core agencies who build and scale outbound delivery workflows for dozens of client environments.
                             </p>
-                            <p class="text-xs text-brand-muted">
+                            <p class="text-sm text-brand-muted leading-relaxed">
                                 We'll map, structure, and onboard these critical partners with specialized co-marketing packages and revenue-share incentives.
                             </p>
                         </div>
-                        <div class="space-y-3">
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-brand-dark">Strategic Target Profiles</h4>
-                            <div class="border border-gray-200 bg-white p-3 rounded">
-                                <span class="text-xs font-bold text-brand-dark block">Growth Agencies</span>
-                                <p class="text-[11px] text-brand-muted mt-0.5">Cold outreach firms, specialized SDR teams, and RevOps consultants managing deep multi-domain infrastructures.</p>
+                        <div class="space-y-4">
+                            <h4 class="text-sm font-bold uppercase tracking-wider text-brand-dark border-b pb-1">Strategic Target Profiles</h4>
+                            <div class="border border-gray-200 bg-white p-4 rounded-lg shadow-sm">
+                                <span class="text-sm font-bold text-brand-dark block">Growth Agencies</span>
+                                <p class="text-xs md:text-sm text-brand-muted mt-1 leading-relaxed">Cold outreach firms, specialized SDR teams, and RevOps consultants managing deep multi-domain infrastructures.</p>
                             </div>
-                            <div class="border border-gray-200 bg-white p-3 rounded">
-                                <span class="text-xs font-bold text-brand-dark block">Ecosystem Operators</span>
-                                <p class="text-[11px] text-brand-muted mt-0.5">Clay practitioners, Smartlead / Instantly workspace architects, and specialized deliverables consultants.</p>
+                            <div class="border border-gray-200 bg-white p-4 rounded-lg shadow-sm">
+                                <span class="text-sm font-bold text-brand-dark block">Ecosystem Operators</span>
+                                <p class="text-xs md:text-sm text-brand-muted mt-1 leading-relaxed">Clay practitioners, Smartlead / Instantly workspace architects, and specialized deliverables consultants.</p>
                             </div>
                         </div>
                     </div>
@@ -629,38 +612,38 @@
                 index: 12,
                 category: "MODULE 1: TRUST & DISTRIBUTION",
                 subCategory: "Commercial Model",
-                title: "Module 1: Financial Architecture",
+                title: "Module I: Financial Architecture",
                 sub: "Commercials",
                 notes: "Present Module 1 commercials: 3 months timeline, total engagement cost ₹4,50,000, with clear, performance-linked milestone distributions.",
                 content: `
                     <div class="space-y-6 h-full flex flex-col justify-center">
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="bg-brand-light border border-brand-border p-6 rounded-lg flex flex-col justify-between">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div class="bg-brand-light border border-brand-border p-6 md:p-8 rounded-lg flex flex-col justify-between shadow-sm">
                                 <div>
-                                    <span class="text-xs uppercase tracking-widest font-semibold text-brand-dark">Financial Core</span>
-                                    <h3 class="text-brand-dark text-3xl font-serif mt-2 mb-1">₹4,50,000</h3>
-                                    <p class="text-xs text-brand-muted mb-4">Complete 3-Month Foundations Project</p>
+                                    <span class="text-xs uppercase tracking-widest font-bold text-brand-dark">Financial Core</span>
+                                    <h3 class="text-brand-dark text-4xl font-serif mt-2 mb-2">₹4,50,000</h3>
+                                    <p class="text-sm text-brand-muted mb-4 font-medium">Complete 3-Month Foundations Project</p>
                                 </div>
-                                <div class="border-t border-brand-border pt-4">
-                                    <span class="text-[11px] font-bold text-brand-dark block">Optimization Retainer</span>
-                                    <p class="text-xs text-brand-muted">₹60,000 / month, activated post-month-3 to monitor review channels, manage partners, and adjust trial funnel conversion flows.</p>
+                                <div class="border-t border-brand-border pt-4 mt-4">
+                                    <span class="text-xs md:text-sm font-bold text-brand-dark block">Optimization Retainer</span>
+                                    <p class="text-xs md:text-sm text-brand-muted mt-1 leading-relaxed">₹60,000 / month, activated post-month-3 to monitor review channels, manage partners, and adjust trial funnel conversion flows.</p>
                                 </div>
                             </div>
-                            <div class="space-y-3">
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-brand-dark border-b border-gray-200 pb-2">Billing Milestones</h4>
-                                <div class="flex justify-between items-center text-xs text-brand-muted">
+                            <div class="space-y-4 flex flex-col justify-center">
+                                <h4 class="text-sm font-bold uppercase tracking-wider text-brand-dark border-b border-gray-200 pb-2">Billing Milestones</h4>
+                                <div class="flex justify-between items-center text-sm text-brand-muted border-b pb-1">
                                     <span>Program Initiation (Kickoff)</span>
                                     <span class="font-mono font-bold text-brand-dark">10% (₹45,000)</span>
                                 </div>
-                                <div class="flex justify-between items-center text-xs text-brand-muted">
+                                <div class="flex justify-between items-center text-sm text-brand-muted border-b pb-1">
                                     <span>End of Month 1 Deliverables</span>
                                     <span class="font-mono font-bold text-brand-dark">20% (₹90,000)</span>
                                 </div>
-                                <div class="flex justify-between items-center text-xs text-brand-muted">
+                                <div class="flex justify-between items-center text-sm text-brand-muted border-b pb-1">
                                     <span>End of Month 2 Deliverables</span>
                                     <span class="font-mono font-bold text-brand-dark">20% (₹90,000)</span>
                                 </div>
-                                <div class="flex justify-between items-center text-xs text-brand-muted">
+                                <div class="flex justify-between items-center text-sm text-brand-muted pb-1">
                                     <span>Final Handover & Launch</span>
                                     <span class="font-mono font-bold text-brand-dark">50% (₹2,25,000)</span>
                                 </div>
@@ -673,31 +656,31 @@
                 index: 13,
                 category: "MODULE 2: AUTHORITY & VISIBILITY",
                 subCategory: "Overview",
-                title: "Model II: Expanding Brand Footprints",
+                title: "Module II: Expanding Brand Footprints",
                 sub: "Module 2",
                 notes: "Transition to Module 2. Highlight that our focus expands into building deep technical footprint visibility, founder authority systems, and AI optimization engines.",
                 content: `
                     <div class="grid md:grid-cols-2 gap-8 items-center h-full">
                         <div class="space-y-4">
-                            <span class="text-xs uppercase tracking-wider font-semibold text-brand-dark bg-brand-light px-2.5 py-1 rounded">Ecosystem Visibility</span>
-                            <h3 class="text-brand-dark text-2xl font-serif">Building Category Authority & Al Sourced Footprints</h3>
-                            <p class="text-sm text-brand-muted leading-relaxed">
+                            <span class="text-xs uppercase tracking-wider font-bold text-brand-dark bg-brand-light px-2.5 py-1 rounded">Ecosystem Visibility</span>
+                            <h3 class="text-brand-dark text-3xl font-serif">Building Category Authority & Al Sourced Footprints</h3>
+                            <p class="text-base text-brand-muted leading-relaxed">
                                 To reduce relying heavily on direct sales and expensive paid channels, Mailora must establish authority where technical operators explore and research solutions.
                             </p>
                         </div>
-                        <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                            <h4 class="text-xs font-bold text-brand-dark uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">Module 2 Inclusions</h4>
-                            <ul class="space-y-3 text-xs text-brand-muted">
-                                <li class="flex items-start gap-2">
-                                    <span class="text-brand-dark font-mono font-bold">✓</span>
-                                    <span>Includes every asset from Model I (Trust & Conversion infrastructure).</span>
+                        <div class="bg-gray-50 p-6 md:p-8 rounded-lg border border-gray-200 shadow-sm">
+                            <h4 class="text-sm font-bold text-brand-dark uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">Module II Inclusions</h4>
+                            <ul class="space-y-4 text-sm md:text-base text-brand-muted">
+                                <li class="flex items-start gap-3">
+                                    <span class="text-brand-dark font-mono font-bold text-lg">✓</span>
+                                    <span>Includes every asset from Module I (Trust & Conversion infrastructure).</span>
                                 </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="text-brand-dark font-mono font-bold">✓</span>
+                                <li class="flex items-start gap-3">
+                                    <span class="text-brand-dark font-mono font-bold text-lg">✓</span>
                                     <span>Build social engines and specialized founder positioning architectures.</span>
                                 </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="text-brand-dark font-mono font-bold">✓</span>
+                                <li class="flex items-start gap-3">
+                                    <span class="text-brand-dark font-mono font-bold text-lg">✓</span>
                                     <span>Deploy structured SEO indexing models to optimize AI and conversational search rankings.</span>
                                 </li>
                             </ul>
@@ -715,30 +698,30 @@
                 content: `
                     <div class="space-y-6 h-full flex flex-col justify-center">
                         <div class="border-b border-gray-100 pb-2">
-                            <h3 class="text-brand-dark text-lg font-serif">Platform-Native Positioning Matrix</h3>
-                            <p class="text-xs text-brand-muted">Establish, design, and optimize 10 distinct digital presence layers for Mailora.</p>
+                            <h3 class="text-brand-dark text-xl md:text-2xl font-serif">Platform-Native Positioning Matrix</h3>
+                            <p class="text-sm text-brand-muted mt-1">Establish, design, and optimize 10 distinct digital presence layers for Mailora.</p>
                         </div>
-                        <div class="grid md:grid-cols-3 gap-3 text-xs">
-                            <div class="border border-gray-200 bg-white p-3 rounded">
-                                <span class="font-bold text-brand-dark uppercase tracking-wider text-[10px] block mb-2 text-brand-dark">Operator & Prof. Nodes</span>
-                                <ul class="space-y-1 text-brand-muted">
+                        <div class="grid md:grid-cols-3 gap-4 text-xs md:text-sm">
+                            <div class="border border-gray-200 bg-white p-4 rounded-lg shadow-sm">
+                                <span class="font-bold uppercase tracking-wider block mb-3 text-brand-dark border-b pb-1">Operator Nodes</span>
+                                <ul class="space-y-2 text-brand-muted font-medium">
                                     <li>&bull; LinkedIn Enterprise Setup</li>
                                     <li>&bull; X (Twitter) Channel Strategy</li>
                                     <li>&bull; Specialized Subreddits</li>
                                     <li>&bull; Quora Technical Q&A</li>
                                 </ul>
                             </div>
-                            <div class="border border-gray-200 bg-white p-3 rounded">
-                                <span class="font-bold text-brand-dark uppercase tracking-wider text-[10px] block mb-2 text-brand-dark">Technical & Education</span>
-                                <ul class="space-y-1 text-brand-muted">
+                            <div class="border border-gray-200 bg-white p-4 rounded-lg shadow-sm">
+                                <span class="font-bold uppercase tracking-wider block mb-3 text-brand-dark border-b pb-1">Technical Education</span>
+                                <ul class="space-y-2 text-brand-muted font-medium">
                                     <li>&bull; YouTube Video Database</li>
                                     <li>&bull; Facebook Deliverability Hubs</li>
                                     <li>&bull; Operator Case Studies</li>
                                 </ul>
                             </div>
-                            <div class="border border-gray-200 bg-white p-3 rounded">
-                                <span class="font-bold text-brand-dark uppercase tracking-wider text-[10px] block mb-2 text-brand-dark">Long-form Publishing</span>
-                                <ul class="space-y-1 text-brand-muted">
+                            <div class="border border-gray-200 bg-white p-4 rounded-lg shadow-sm">
+                                <span class="font-bold uppercase tracking-wider block mb-3 text-brand-dark border-b pb-1">Long-form Publishing</span>
+                                <ul class="space-y-2 text-brand-muted font-medium">
                                     <li>&bull; Substack Newsletter</li>
                                     <li>&bull; Medium Platform Outlines</li>
                                     <li>&bull; Threads Ecosystem</li>
@@ -758,28 +741,28 @@
                 content: `
                     <div class="grid md:grid-cols-2 gap-8 items-center h-full">
                         <div class="space-y-4">
-                            <h3 class="text-brand-dark text-xl font-serif">Optimizing for LLM & Conversational Systems</h3>
-                            <p class="text-sm text-brand-muted leading-relaxed">
+                            <h3 class="text-brand-dark text-2xl md:text-3xl font-serif">Optimizing for LLM & Conversational Systems</h3>
+                            <p class="text-base text-brand-muted leading-relaxed">
                                 Modern SaaS solutions are frequently discovered through ChatGPT, Claude, Gemini, and perplexity.ai. AI engines build recommendation maps based on public document references and indexable discussions.
                             </p>
-                            <div class="p-3 bg-brand-light rounded border-l-4 border-brand-dark text-xs">
-                                <span class="font-bold text-brand-dark block">The Metric</span>
+                            <div class="p-4 bg-brand-light rounded border-l-4 border-brand-dark text-sm">
+                                <span class="font-bold text-brand-dark block text-base">The Metric</span>
                                 Up to 10 structured, educational assets published across core directories and public hubs per week to maximize AI indexing density.
                             </div>
                         </div>
-                        <div class="bg-gray-50 border border-gray-200 p-5 rounded-lg space-y-4 text-xs">
-                            <h4 class="text-xs font-bold uppercase tracking-wider text-brand-dark border-b border-gray-200 pb-1">AI Recommendation Factors</h4>
-                            <div class="flex items-start gap-2">
+                        <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg space-y-4 text-sm md:text-base">
+                            <h4 class="text-sm font-bold uppercase tracking-wider text-brand-dark border-b border-gray-200 pb-2">AI Recommendation Factors</h4>
+                            <div class="flex items-start gap-3">
                                 <span class="text-brand-dark font-mono font-bold">[1]</span>
-                                <span class="text-brand-muted">Structured product schema setup for search engine crawlers.</span>
+                                <span class="text-brand-muted leading-relaxed">Structured product schema setup for search engine crawlers.</span>
                             </div>
-                            <div class="flex items-start gap-2">
+                            <div class="flex items-start gap-3">
                                 <span class="text-brand-dark font-mono font-bold">[2]</span>
-                                <span class="text-brand-muted">Active GitHub repositories with indexable API integrations.</span>
+                                <span class="text-brand-muted leading-relaxed">Active GitHub repositories with indexable API integrations.</span>
                             </div>
-                            <div class="flex items-start gap-2">
+                            <div class="flex items-start gap-3">
                                 <span class="text-brand-dark font-mono font-bold">[3]</span>
-                                <span class="text-brand-muted">Public discussions outlining deliverables troubleshooting steps.</span>
+                                <span class="text-brand-muted leading-relaxed">Public discussions outlining deliverables troubleshooting steps.</span>
                             </div>
                         </div>
                     </div>
@@ -789,38 +772,38 @@
                 index: 16,
                 category: "MODULE 2: AUTHORITY & VISIBILITY",
                 subCategory: "Commercial Model",
-                title: "Module 2: Financial Architecture",
+                title: "Module II: Financial Architecture",
                 sub: "Commercials",
-                notes: "Break down Model 2 financials: 6-month timeline, total cost ₹12,50,000, 250-340 specialized execution hours, with ₹1,25,000 monthly retainer parameters.",
+                notes: "Break down Module 2 financials: 6-month timeline, total cost ₹12,50,000, 250-340 specialized execution hours, with ₹1,25,000 monthly retainer parameters.",
                 content: `
                     <div class="space-y-6 h-full flex flex-col justify-center">
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="bg-brand-light border border-brand-border p-6 rounded-lg flex flex-col justify-between">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div class="bg-brand-light border border-brand-border p-6 md:p-8 rounded-lg flex flex-col justify-between shadow-sm">
                                 <div>
-                                    <span class="text-xs uppercase tracking-widest font-semibold text-brand-dark font-mono">PROJECT SCOPE</span>
-                                    <h3 class="text-brand-dark text-3xl font-serif mt-2 mb-1">₹12,50,000</h3>
-                                    <p class="text-xs text-brand-muted mb-4">6 Months Timeline | 260-340 Specialized Hours</p>
+                                    <span class="text-xs uppercase tracking-widest font-bold text-brand-dark font-mono">PROJECT SCOPE</span>
+                                    <h3 class="text-brand-dark text-4xl font-serif mt-2 mb-2">₹12,50,000</h3>
+                                    <p class="text-sm text-brand-muted mb-4 font-semibold">6 Months Timeline | 260-340 Specialized Hours</p>
                                 </div>
-                                <div class="border-t border-brand-border pt-4">
-                                    <span class="text-[11px] font-bold text-brand-dark block">Ongoing Operations Retainer</span>
-                                    <p class="text-xs text-brand-muted">₹1,25,000 / month, covers content creation, managing communities, active monitor tracking, and AI-indexing updates.</p>
+                                <div class="border-t border-brand-border pt-4 mt-4">
+                                    <span class="text-xs md:text-sm font-bold text-brand-dark block">Ongoing Operations Retainer</span>
+                                    <p class="text-xs md:text-sm text-brand-muted mt-1 leading-relaxed">₹1,25,000 / month, covers content creation, managing communities, active monitor tracking, and AI-indexing updates.</p>
                                 </div>
                             </div>
-                            <div class="space-y-3">
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-brand-dark border-b border-gray-200 pb-2">Strategic Billing Milestones</h4>
-                                <div class="flex justify-between items-center text-xs text-brand-muted">
+                            <div class="space-y-4 flex flex-col justify-center">
+                                <h4 class="text-sm font-bold uppercase tracking-wider text-brand-dark border-b border-gray-200 pb-2">Strategic Billing Milestones</h4>
+                                <div class="flex justify-between items-center text-sm text-brand-muted border-b pb-1">
                                     <span>Program Initiation Fee</span>
                                     <span class="font-mono font-bold text-brand-dark">25% (₹3,12,500)</span>
                                 </div>
-                                <div class="flex justify-between items-center text-xs text-brand-muted">
-                                    <span>Month 1 Deliverables Sign-off</span>
+                                <div class="flex justify-between items-center text-sm text-brand-muted border-b pb-1">
+                                    <span>Module 1 Deliverables Sign-off</span>
                                     <span class="font-mono font-bold text-brand-dark">25% (₹3,12,500)</span>
                                 </div>
-                                <div class="flex justify-between items-center text-xs text-brand-muted">
-                                    <span>Month 2 Deliverables Sign-off</span>
+                                <div class="flex justify-between items-center text-sm text-brand-muted border-b pb-1">
+                                    <span>Module 2 Deliverables Sign-off</span>
                                     <span class="font-mono font-bold text-brand-dark">25% (₹3,12,500)</span>
                                 </div>
-                                <div class="flex justify-between items-center text-xs text-brand-muted">
+                                <div class="flex justify-between items-center text-sm text-brand-muted pb-1">
                                     <span>Final Delivery & Deployment</span>
                                     <span class="font-mono font-bold text-brand-dark">25% (₹3,12,500)</span>
                                 </div>
@@ -833,31 +816,36 @@
                 index: 17,
                 category: "MODULE 3: REVENUE OPERATIONS",
                 subCategory: "Overview",
-                title: "Model III: Allbound Revenue Integration",
+                title: "Module III: Allbound Revenue Integration",
                 sub: "Module 3",
                 notes: "Introduce Module 3. This layer focuses on integrating all previously built trust, visibility, and conversion systems into a single automated revenue engine.",
                 content: `
                     <div class="grid md:grid-cols-2 gap-8 items-center h-full">
                         <div class="space-y-4">
-                            <span class="text-xs uppercase tracking-wider font-semibold text-brand-dark bg-brand-light px-2.5 py-1 rounded">GTM Operating System</span>
-                            <h3 class="text-brand-dark text-2xl font-serif">Building the Integrated Revenue Operations Engine</h3>
-                            <p class="text-sm text-brand-muted leading-relaxed">
-                                Most outbound operations struggle because systems run as isolated silos: CRM doesn't record website intent, and marketing sequences lack direct outbound context. Model 3 connects these components.
+                            <span class="text-xs uppercase tracking-wider font-bold text-brand-dark bg-brand-light px-2.5 py-1 rounded">GTM Operating System</span>
+                            <h3 class="text-brand-dark text-3xl font-serif">Building the Integrated Revenue Operations Engine</h3>
+                            <p class="text-base text-brand-muted leading-relaxed">
+                                Most outbound operations struggle because systems run as isolated silos: CRM doesn't record website intent, and marketing sequences lack direct outbound context. Module 3 connects these components.
                             </p>
+                            <div class="pt-2">
+                                <a href="https://miro.com/app/board/uXjVHNz27dY=/?share_link_id=73688429055" target="_blank" class="no-print inline-flex items-center gap-2 px-4 py-2 bg-[#050038] text-white text-xs font-bold rounded-md hover:bg-opacity-90 transition-all shadow-md">
+                                    <i data-lucide="external-link" class="w-4 h-4"></i> View Strategy Map on Miro
+                                </a>
+                            </div>
                         </div>
-                        <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                            <h4 class="text-xs font-bold text-brand-dark uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">Key Areas of Operation</h4>
-                            <ul class="space-y-3 text-xs text-brand-muted">
-                                <li class="flex items-start gap-2">
-                                    <span class="text-brand-dark font-mono font-bold">⚡</span>
+                        <div class="bg-gray-50 p-6 md:p-8 rounded-lg border border-gray-200 shadow-sm">
+                            <h4 class="text-sm font-bold text-brand-dark uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">Key Areas of Operation</h4>
+                            <ul class="space-y-4 text-sm md:text-base text-brand-muted">
+                                <li class="flex items-start gap-3">
+                                    <span class="text-brand-dark font-mono font-bold text-lg">⚡</span>
                                     <span>De-anonymize website traffic and enrich with real-time company intelligence.</span>
                                 </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="text-brand-dark font-mono font-bold">⚡</span>
+                                <li class="flex items-start gap-3">
+                                    <span class="text-brand-dark font-mono font-bold text-lg">⚡</span>
                                     <span>Connect CRM hubs with modern database enrichment tools like Clay.</span>
                                 </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="text-brand-dark font-mono font-bold">⚡</span>
+                                <li class="flex items-start gap-3">
+                                    <span class="text-brand-dark font-mono font-bold text-lg">⚡</span>
                                     <span>Build automated multi-channel sequences using LinkedIn and email trigger signals.</span>
                                 </li>
                             </ul>
@@ -874,30 +862,35 @@
                 notes: "Explain our recommended tech stack. This isn't theoretical—it's a tested framework utilizing de-anonymization (Vector/RB2B), enrichment (Clay), and unified CRM tracking.",
                 content: `
                     <div class="space-y-6 h-full flex flex-col justify-center">
-                        <div class="border-b border-gray-100 pb-2">
-                            <h3 class="text-brand-dark text-lg font-serif">Recommended System Integrations</h3>
-                            <p class="text-xs text-brand-muted">An integrated operational blueprint connecting modern, real-time B2B sales intelligence components.</p>
+                        <div class="flex items-center justify-between border-b border-gray-100 pb-2 flex-wrap gap-2">
+                            <div>
+                                <h3 class="text-brand-dark text-xl md:text-2xl font-serif">Recommended System Integrations</h3>
+                                <p class="text-sm text-brand-muted mt-1">An integrated operational blueprint connecting modern, real-time B2B sales intelligence components.</p>
+                            </div>
+                            <a href="https://miro.com/app/board/uXjVHNz27dY=/?share_link_id=73688429055" target="_blank" class="no-print inline-flex items-center gap-1.5 px-3 py-1 bg-[#050038] text-white text-[11px] font-bold rounded hover:bg-opacity-90 transition-all shadow-sm">
+                                <i data-lucide="external-link" class="w-3 h-3"></i> Open Architecture
+                            </a>
                         </div>
-                        <div class="grid md:grid-cols-4 gap-3 text-xs">
-                            <div class="border border-gray-100 bg-brand-canvas p-4 rounded hover:border-brand-dark transition-all">
-                                <span class="font-bold text-brand-dark uppercase tracking-wider text-[10px] block mb-2">Centralized CRM</span>
-                                <p class="text-[10px] text-brand-muted mb-2">HubSpot (recommended) or Salesforce setup as the primary GTM source of truth.</p>
-                                <span class="text-[9px] bg-brand-light text-brand-dark font-mono px-1.5 py-0.5 rounded">Core Database</span>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs md:text-sm">
+                            <div class="border border-gray-200 bg-brand-canvas p-5 rounded-lg shadow-sm">
+                                <span class="font-bold text-brand-dark uppercase tracking-wider block mb-2 border-b pb-1">Centralized CRM</span>
+                                <p class="text-xs md:text-sm text-brand-muted mb-3 leading-relaxed">HubSpot (recommended) or Salesforce setup as the primary GTM source of truth.</p>
+                                <span class="text-[10px] bg-brand-light text-brand-dark font-mono font-bold px-2 py-0.5 rounded">Core Database</span>
                             </div>
-                            <div class="border border-gray-100 bg-brand-canvas p-4 rounded hover:border-brand-dark transition-all">
-                                <span class="font-bold text-brand-dark uppercase tracking-wider text-[10px] block mb-2">De-Anonymization</span>
-                                <p class="text-[10px] text-brand-muted mb-2">Vector, RB2B, or Factors.ai to map and reveal anonymous company visitors.</p>
-                                <span class="text-[9px] bg-brand-light text-brand-dark font-mono px-1.5 py-0.5 rounded">Web Signals</span>
+                            <div class="border border-gray-200 bg-brand-canvas p-5 rounded-lg shadow-sm">
+                                <span class="font-bold text-brand-dark uppercase tracking-wider block mb-2 border-b pb-1">De-Anonymize</span>
+                                <p class="text-xs md:text-sm text-brand-muted mb-3 leading-relaxed">Vector, RB2B, or Factors.ai to map and reveal anonymous company visitors.</p>
+                                <span class="text-[10px] bg-brand-light text-brand-dark font-mono font-bold px-2 py-0.5 rounded">Web Signals</span>
                             </div>
-                            <div class="border border-gray-100 bg-brand-canvas p-4 rounded hover:border-brand-dark transition-all">
-                                <span class="font-bold text-brand-dark uppercase tracking-wider text-[10px] block mb-2">Data Enrichment</span>
-                                <p class="text-[10px] text-brand-muted mb-2">Clay workspace systems to instantly enrich logs and build targeted accounts.</p>
-                                <span class="text-[9px] bg-brand-light text-brand-dark font-mono px-1.5 py-0.5 rounded">Enrichment</span>
+                            <div class="border border-gray-200 bg-brand-canvas p-5 rounded-lg shadow-sm">
+                                <span class="font-bold text-brand-dark uppercase tracking-wider block mb-2 border-b pb-1">Data Enrichment</span>
+                                <p class="text-xs md:text-sm text-brand-muted mb-3 leading-relaxed">Clay workspace systems to instantly enrich logs and build targeted accounts.</p>
+                                <span class="text-[10px] bg-brand-light text-brand-dark font-mono font-bold px-2 py-0.5 rounded">Enrichment</span>
                             </div>
-                            <div class="border border-gray-100 bg-brand-canvas p-4 rounded hover:border-brand-dark transition-all">
-                                <span class="font-bold text-brand-dark uppercase tracking-wider text-[10px] block mb-2">GTM Outbound Sync</span>
-                                <p class="text-[10px] text-brand-muted mb-2">Mailora diagnostics connected with Smartlead / Instantly delivery tools.</p>
-                                <span class="text-[9px] bg-brand-light text-brand-dark font-mono px-1.5 py-0.5 rounded">Deliverability</span>
+                            <div class="border border-gray-200 bg-brand-canvas p-5 rounded-lg shadow-sm">
+                                <span class="font-bold text-brand-dark uppercase tracking-wider block mb-2 border-b pb-1">Outbound Sync</span>
+                                <p class="text-xs md:text-sm text-brand-muted mb-3 leading-relaxed">Mailora diagnostics connected with Smartlead / Instantly delivery tools.</p>
+                                <span class="text-[10px] bg-brand-light text-brand-dark font-mono font-bold px-2 py-0.5 rounded">Deliverability</span>
                             </div>
                         </div>
                     </div>
@@ -913,27 +906,32 @@
                 content: `
                     <div class="space-y-6 h-full flex flex-col justify-center">
                         <div class="text-center mb-2">
-                            <h3 class="text-brand-dark text-lg font-serif">A Unified Allbound Automation Engine</h3>
-                            <p class="text-xs text-brand-muted">Automated loops that convert intent signals into targeted, personalized outbound pipelines.</p>
+                            <h3 class="text-brand-dark text-xl md:text-2xl font-serif">A Unified Allbound Automation Engine</h3>
+                            <p class="text-sm text-brand-muted mt-1">Automated loops that convert intent signals into targeted, personalized outbound pipelines.</p>
                         </div>
-                        <div class="flex flex-col md:flex-row items-center justify-between gap-4 max-w-4xl mx-auto text-xs">
-                            <div class="bg-white border border-gray-200 p-4 rounded-lg w-full md:w-56 text-center hover:border-brand-dark transition-all">
-                                <span class="text-[9px] font-mono font-bold text-brand-dark bg-brand-light px-2 py-0.5 rounded-full">STEP 1</span>
-                                <h4 class="font-bold text-brand-dark mt-2">Intent Collection</h4>
-                                <p class="text-[10px] text-brand-muted mt-1 leading-relaxed">Website activity tracks and identifies companies visiting high-intent content blocks.</p>
+                        <div class="flex flex-col md:flex-row items-center justify-between gap-4 max-w-5xl mx-auto text-sm md:text-base">
+                            <div class="bg-white border border-gray-200 p-5 rounded-lg w-full md:w-64 text-center hover:border-brand-dark transition-all shadow-sm">
+                                <span class="text-[10px] font-mono font-bold text-brand-dark bg-brand-light px-2.5 py-1 rounded-full">STEP 1</span>
+                                <h4 class="font-bold text-brand-dark mt-3 mb-1">Intent Collection</h4>
+                                <p class="text-xs md:text-sm text-brand-muted mt-1 leading-relaxed">Website activity tracks and identifies companies visiting high-intent content blocks.</p>
                             </div>
-                            <div class="hidden md:block text-brand-dark text-xl">&bull;&bull;&bull;►</div>
-                            <div class="bg-white border border-gray-200 p-4 rounded-lg w-full md:w-56 text-center hover:border-brand-dark transition-all">
-                                <span class="text-[9px] font-mono font-bold text-brand-dark bg-brand-light px-2 py-0.5 rounded-full">STEP 2</span>
-                                <h4 class="font-bold text-brand-dark mt-2">Dynamic Enrichment</h4>
-                                <p class="text-[10px] text-brand-muted mt-1 leading-relaxed">Clay enrichment engines pull decision-maker details, delivery tech tools, and domain counts.</p>
+                            <div class="hidden md:block text-brand-dark text-xl font-bold">&bull;&bull;&bull;►</div>
+                            <div class="bg-white border border-gray-200 p-5 rounded-lg w-full md:w-64 text-center hover:border-brand-dark transition-all shadow-sm">
+                                <span class="text-[10px] font-mono font-bold text-brand-dark bg-brand-light px-2.5 py-1 rounded-full">STEP 2</span>
+                                <h4 class="font-bold text-brand-dark mt-3 mb-1">Dynamic Enrichment</h4>
+                                <p class="text-xs md:text-sm text-brand-muted mt-1 leading-relaxed">Clay enrichment engines pull decision-maker details, delivery tech tools, and domain counts.</p>
                             </div>
-                            <div class="hidden md:block text-brand-dark text-xl">&bull;&bull;&bull;►</div>
-                            <div class="bg-white border border-gray-200 p-4 rounded-lg w-full md:w-56 text-center hover:border-brand-dark transition-all">
-                                <span class="text-[9px] font-mono font-bold text-brand-dark bg-brand-light px-2 py-0.5 rounded-full">STEP 3</span>
-                                <h4 class="font-bold text-brand-dark mt-2">Multi-Channel Delivery</h4>
-                                <p class="text-[10px] text-brand-muted mt-1 leading-relaxed">Automated LinkedIn actions (HeyReach) paired with warm deliverability diagnostics sequences.</p>
+                            <div class="hidden md:block text-brand-dark text-xl font-bold">&bull;&bull;&bull;►</div>
+                            <div class="bg-white border border-gray-200 p-5 rounded-lg w-full md:w-64 text-center hover:border-brand-dark transition-all shadow-sm">
+                                <span class="text-[10px] font-mono font-bold text-brand-dark bg-brand-light px-2.5 py-1 rounded-full">STEP 3</span>
+                                <h4 class="font-bold text-brand-dark mt-3 mb-1">Multi-Channel Delivery</h4>
+                                <p class="text-xs md:text-sm text-brand-muted mt-1 leading-relaxed">Automated LinkedIn actions (HeyReach) paired with warm deliverability diagnostics sequences.</p>
                             </div>
+                        </div>
+                        <div class="text-center no-print pt-2">
+                            <a href="https://miro.com/app/board/uXjVHNz27dY=/?share_link_id=73688429055" target="_blank" class="inline-flex items-center gap-2 text-xs font-bold text-brand-dark underline hover:text-brand-muted">
+                                <i data-lucide="link" class="w-3.5 h-3.5"></i> Open Full Interactive Canvas on Miro Workspace
+                            </a>
                         </div>
                     </div>
                 `
@@ -942,38 +940,38 @@
                 index: 20,
                 category: "MODULE 3: REVENUE OPERATIONS",
                 subCategory: "Commercial Model",
-                title: "Module 3: Financial Architecture",
+                title: "Module III: Financial Architecture",
                 sub: "Commercials",
-                notes: "Break down Model 3 commercials: 6 months, ₹24,00,000, 650-1000+ complex execution hours, and an optimization retainer of ₹90,000/month. Highlight that retainers reduce over time because systems become heavily automated.",
+                notes: "Break down Module 3 financials: 6 months, ₹24,00,000, 650-1000+ complex execution hours, and an optimization retainer of ₹90,000/month. Highlight that retainers reduce over time because systems become heavily automated.",
                 content: `
                     <div class="space-y-6 h-full flex flex-col justify-center">
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="bg-brand-light border border-brand-border p-6 rounded-lg flex flex-col justify-between">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div class="bg-brand-light border border-brand-border p-6 md:p-8 rounded-lg flex flex-col justify-between shadow-sm">
                                 <div>
-                                    <span class="text-xs uppercase tracking-widest font-semibold text-brand-dark font-mono">ALLBOUND INTEGRATION</span>
-                                    <h3 class="text-brand-dark text-3xl font-serif mt-2 mb-1">₹24,00,000</h3>
-                                    <p class="text-xs text-brand-muted mb-4">6 Months Execution Scope | 650-1000+ Hours</p>
+                                    <span class="text-xs uppercase tracking-widest font-bold text-brand-dark font-mono">ALLBOUND INTEGRATION</span>
+                                    <h3 class="text-brand-dark text-4xl font-serif mt-2 mb-2">₹24,00,000</h3>
+                                    <p class="text-sm text-brand-muted mb-4 font-semibold">6 Months Execution Scope | 650-1000+ Hours</p>
                                 </div>
-                                <div class="border-t border-brand-border pt-4">
-                                    <span class="text-[11px] font-bold text-brand-dark block">Dynamic Retainer Logic</span>
-                                    <p class="text-xs text-brand-muted">₹90,000 / month. Over time, manual execution is replaced by automated code patterns, naturally lowering ongoing support costs.</p>
+                                <div class="border-t border-brand-border pt-4 mt-4">
+                                    <span class="text-xs md:text-sm font-bold text-brand-dark block">Dynamic Retainer Logic</span>
+                                    <p class="text-xs md:text-sm text-brand-muted mt-1 leading-relaxed">₹90,000 / month. Over time, manual execution is replaced by automated code patterns, naturally lowering ongoing support costs.</p>
                                 </div>
                             </div>
-                            <div class="space-y-3">
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-brand-dark border-b border-gray-200 pb-2">Engagement Milestone Setup</h4>
-                                <div class="flex justify-between items-center text-xs text-brand-muted">
+                            <div class="space-y-4 flex flex-col justify-center">
+                                <h4 class="text-sm font-bold uppercase tracking-wider text-brand-dark border-b border-gray-200 pb-2">Engagement Milestone Setup</h4>
+                                <div class="flex justify-between items-center text-sm text-brand-muted border-b pb-1">
                                     <span>Engagement Initiation</span>
                                     <span class="font-mono font-bold text-brand-dark">20% (₹4,80,000)</span>
                                 </div>
-                                <div class="flex justify-between items-center text-xs text-brand-muted">
+                                <div class="flex justify-between items-center text-sm text-brand-muted border-b pb-1">
                                     <span>End of Month 2 Audit & Build</span>
                                     <span class="font-mono font-bold text-brand-dark">20% (₹4,80,000)</span>
                                 </div>
-                                <div class="flex justify-between items-center text-xs text-brand-muted">
+                                <div class="flex justify-between items-center text-sm text-brand-muted border-b pb-1">
                                     <span>End of Month 4 Operations Test</span>
                                     <span class="font-mono font-bold text-brand-dark">20% (₹4,80,000)</span>
                                 </div>
-                                <div class="flex justify-between items-center text-xs text-brand-muted">
+                                <div class="flex justify-between items-center text-sm text-brand-muted pb-1">
                                     <span>Final Deployment & Launch</span>
                                     <span class="font-mono font-bold text-brand-dark">40% (₹9,60,000)</span>
                                 </div>
@@ -991,29 +989,29 @@
                 notes: "Synthesize the presentation. The next generation of B2B delivery companies will win not by hiring more salespeople, but by building high-trust, highly automated growth engines.",
                 content: `
                     <div class="text-center py-6 flex flex-col justify-center items-center h-full">
-                        <div class="inline-block px-3 py-1 bg-brand-light text-brand-dark text-xs uppercase tracking-widest font-semibold rounded mb-4">Closing Thesis</div>
-                        <h2 class="slide-title text-2xl md:text-3xl font-extrabold text-brand-dark leading-tight max-w-2xl mb-4">
+                        <div class="inline-block px-3 py-1 bg-brand-light text-brand-dark text-xs uppercase tracking-widest font-bold rounded mb-4">Closing Thesis</div>
+                        <h2 class="slide-title text-3xl md:text-4xl font-extrabold text-brand-dark leading-tight max-w-3xl mb-4">
                             Transitioning Outbound Software Scaling Dynamics
                         </h2>
-                        <p class="text-xs text-brand-muted max-w-lg mb-6 leading-relaxed">
+                        <p class="text-sm md:text-base text-brand-muted max-w-2xl mb-8 leading-relaxed">
                             Compounding enterprise valuation is achieved when user-acquisition platforms, search-indexing models, partner incentive networks, and automated pipeline intelligence are integrated into a single GTM operating system.
                         </p>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 w-full max-w-2xl mb-6">
-                            <div class="bg-gray-50 border border-gray-200 p-3 rounded">
-                                <span class="text-brand-dark font-bold font-mono text-sm">Step 1</span>
-                                <p class="text-[10px] text-brand-muted mt-1">Kickoff Model I to capture immediate referral leads and convert active trial trials.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl mb-8 text-xs md:text-sm">
+                            <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg shadow-sm">
+                                <span class="text-brand-dark font-bold font-mono text-base">Step 1</span>
+                                <p class="text-brand-muted mt-2 leading-relaxed">Kickoff Module I to capture immediate referral leads and convert active trials.</p>
                             </div>
-                            <div class="bg-gray-50 border border-gray-200 p-3 rounded">
-                                <span class="text-brand-dark font-bold font-mono text-sm">Step 2</span>
-                                <p class="text-[10px] text-brand-muted mt-1">Scale organic visibility footprints and search engines via Model II assets.</p>
+                            <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg shadow-sm">
+                                <span class="text-brand-dark font-bold font-mono text-base">Step 2</span>
+                                <p class="text-brand-muted mt-2 leading-relaxed">Scale organic visibility footprints and search engines via Module II assets.</p>
                             </div>
-                            <div class="bg-gray-50 border border-gray-200 p-3 rounded">
-                                <span class="text-brand-dark font-bold font-mono text-sm">Step 3</span>
-                                <p class="text-[10px] text-brand-muted mt-1">Deploy Model III to unify databases, automate outbound workflows, and accelerate ARR growth.</p>
+                            <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg shadow-sm">
+                                <span class="text-brand-dark font-bold font-mono text-base">Step 3</span>
+                                <p class="text-brand-muted mt-2 leading-relaxed">Deploy Module III to unify databases, automate outbound workflows, and accelerate ARR growth.</p>
                             </div>
                         </div>
                         <div class="flex gap-4">
-                            <button onclick="window.print()" class="text-xs font-semibold bg-brand-dark text-white px-4 py-2 rounded hover:bg-opacity-90 transition-all">Export GTM Document Portfolio</button>
+                            <button onclick="window.print()" class="text-xs md:text-sm font-semibold bg-brand-dark text-white px-5 py-2.5 rounded-md hover:bg-opacity-90 transition-all shadow-md">Export GTM Document Portfolio</button>
                         </div>
                     </div>
                 `
@@ -1021,14 +1019,11 @@
         ];
     </script>
 
-    <!-- Core App Logic -->
     <script>
         let currentSlideIndex = 1;
         let isPlaying = false;
         let playInterval = null;
-        let isSidebarCollapsed = false;
-        let activeViewMode = 'slide'; // 'slide' or 'handout'
-        let currentFilter = '';
+        let isSidebarCollapsed = true;
 
         // DOM elements cache
         const dom = {
@@ -1051,37 +1046,29 @@
             sidebarToggleIcon: document.getElementById('sidebarToggleIcon'),
             stage: document.getElementById('stage'),
             deckContainer: document.getElementById('deckContainer'),
-            handoutContainer: document.getElementById('handoutContainer'),
-            modeSlide: document.getElementById('modeSlide'),
-            modeHandout: document.getElementById('modeHandout'),
             notesPanel: document.getElementById('notesPanel'),
             notesContent: document.getElementById('notesContent'),
             closeNotes: document.getElementById('closeNotes'),
-            slideSearch: document.getElementById('slideSearch'),
-            clearSearch: document.getElementById('clearSearch'),
-            searchResultsToast: document.getElementById('searchResultsToast'),
-            searchResultText: document.getElementById('searchResultText'),
-            resetSearchFilter: document.getElementById('resetSearchFilter')
+            handoutContainer: document.getElementById('handoutContainer')
         };
 
         // Initialize App
         function initApp() {
             renderSlideNavigation();
-            renderHandoutView();
+            renderHandout();
             goToSlide(1);
             setupEventHandlers();
             lucide.createIcons();
+            
+            // Ensure sidebar starts collapsed on load
+            toggleSidebar(true);
         }
 
         // Render Sidebar List
         function renderSlideNavigation() {
             dom.slideList.innerHTML = '';
-            const filteredSlides = getFilteredSlides();
             
             SLIDE_DATA.forEach((slide) => {
-                const isMatch = filteredSlides.some(fs => fs.index === slide.index);
-                if (currentFilter && !isMatch) return;
-
                 const link = document.createElement('button');
                 link.className = `w-full text-left px-3 py-2 rounded text-xs transition-all flex items-start gap-2.5 ${slide.index === currentSlideIndex ? 'bg-brand-light text-brand-dark font-semibold border-l-2 border-brand-dark' : 'text-brand-charcoal hover:bg-gray-100'}`;
                 link.dataset.index = slide.index;
@@ -1104,45 +1091,33 @@
             });
         }
 
-        // Render Handout Mode
-        function renderHandoutView() {
+        // Render Handout Mode elements for continuous full presentation print logs
+        function renderHandout() {
             dom.handoutContainer.innerHTML = '';
             SLIDE_DATA.forEach((slide) => {
-                const card = document.createElement('div');
-                card.className = "bg-white border border-gray-200 rounded-lg p-8 md:p-12 shadow-sm relative print-break flex flex-col justify-between h-[550px]";
-                card.innerHTML = `
+                const slideCard = document.createElement('div');
+                slideCard.className = "bg-white border border-gray-200 rounded-lg flex flex-col justify-between p-8 md:p-12 aspect-[16/10] w-full max-w-5xl mx-auto print-break relative";
+                slideCard.innerHTML = `
                     <div class="flex items-start justify-between border-b border-gray-100 pb-4 h-16 shrink-0">
                         <div>
-                            <span class="text-[10px] tracking-widest uppercase font-semibold text-brand-muted">${slide.category} &bull; ${slide.subCategory}</span>
+                            <span class="text-[10px] tracking-widest uppercase font-semibold text-brand-muted">${slide.category} \u2022 ${slide.subCategory}</span>
                             <h2 class="slide-title text-xl md:text-2xl font-bold text-brand-dark mt-0.5">${slide.title}</h2>
                         </div>
-                        <div>
+                        <div class="text-right">
                             <span class="text-[10px] tracking-widest uppercase font-medium text-brand-dark bg-brand-light px-2.5 py-1 rounded">${slide.sub}</span>
                         </div>
                     </div>
                     <div class="flex-1 py-6 flex flex-col justify-center overflow-y-auto">
                         ${slide.content}
                     </div>
-                    <div class="border-t border-gray-100 pt-4 flex items-center justify-between text-[10px] tracking-wider text-brand-muted shrink-0 mt-4">
-                        <div class="font-medium">MAILORA STRATEGIC OPERATIONAL PORTFOLIO</div>
-                        <div class="italic">Slide ${slide.index} of 21 &bull; Technical Document Copy</div>
+                    <div class="flex items-center justify-between border-t border-gray-100 pt-4 text-[10px] tracking-wider text-brand-muted shrink-0">
+                        <div class="font-medium">MAILORA STRATEGIC INITIATIVE</div>
+                        <div class="italic">Prepared by Sayed Shakir &bull; Confidential</div>
+                        <div class="font-mono font-semibold text-brand-dark">${String(slide.index).padStart(2, '0')} of 21</div>
                     </div>
                 `;
-                dom.handoutContainer.appendChild(card);
+                dom.handoutContainer.appendChild(slideCard);
             });
-        }
-
-        // Get Filtered slides based on search term
-        function getFilteredSlides() {
-            if (!currentFilter) return SLIDE_DATA;
-            const search = currentFilter.toLowerCase();
-            return SLIDE_DATA.filter(slide => 
-                slide.title.toLowerCase().includes(search) || 
-                slide.category.toLowerCase().includes(search) || 
-                slide.subCategory.toLowerCase().includes(search) || 
-                slide.content.toLowerCase().includes(search) || 
-                slide.notes.toLowerCase().includes(search)
-            );
         }
 
         // Go to specific slide number
@@ -1232,60 +1207,20 @@
                 dom.sidebar.classList.add('w-0', '-translate-x-full');
                 dom.sidebar.classList.remove('w-72');
                 dom.sidebarToggleIcon.setAttribute('data-lucide', 'chevron-right');
+                
+                // Make slides slightly bigger when index is collapsed inside automatically
+                dom.deckContainer.classList.remove('max-w-4xl', 'max-w-5xl');
+                dom.deckContainer.classList.add('max-w-6xl');
             } else {
                 dom.sidebar.classList.remove('w-0', '-translate-x-full');
                 dom.sidebar.classList.add('w-72');
                 dom.sidebarToggleIcon.setAttribute('data-lucide', 'chevron-left');
+                
+                // Adjust size down dynamically once side index returns to avoid content shifting
+                dom.deckContainer.classList.remove('max-w-6xl');
+                dom.deckContainer.classList.add('max-w-4xl');
             }
             lucide.createIcons();
-        }
-
-        // Set View mode (Slide Deck vs Handout View)
-        function setViewMode(mode) {
-            activeViewMode = mode;
-            if (mode === 'slide') {
-                dom.deckContainer.classList.remove('hidden');
-                dom.handoutContainer.classList.add('hidden');
-                dom.modeSlide.classList.add('bg-white', 'shadow-sm', 'text-brand-dark');
-                dom.modeSlide.classList.remove('text-brand-muted');
-                dom.modeHandout.classList.remove('bg-white', 'shadow-sm', 'text-brand-dark');
-                dom.modeHandout.classList.add('text-brand-muted');
-                goToSlide(currentSlideIndex);
-            } else {
-                dom.deckContainer.classList.add('hidden');
-                dom.handoutContainer.classList.remove('hidden');
-                dom.modeHandout.classList.add('bg-white', 'shadow-sm', 'text-brand-dark');
-                dom.modeHandout.classList.remove('text-brand-muted');
-                dom.modeSlide.classList.remove('bg-white', 'shadow-sm', 'text-brand-dark');
-                dom.modeSlide.classList.add('text-brand-muted');
-                // Hide notes panel in handout mode
-                dom.notesPanel.classList.add('hidden');
-            }
-        }
-
-        // Filter / Search engine handler
-        function handleSearch(val) {
-            currentFilter = val;
-            const matches = getFilteredSlides();
-            
-            if (val) {
-                dom.clearSearch.classList.remove('hidden');
-                dom.searchResultsToast.classList.remove('hidden');
-                dom.searchResultText.textContent = `Found ${matches.length} matching slides`;
-                
-                // If there are matches, go to the first matched slide automatically
-                if (matches.length > 0) {
-                    const matchedCurrent = matches.find(m => m.index === currentSlideIndex);
-                    if (!matchedCurrent) {
-                        goToSlide(matches[0].index);
-                    }
-                }
-            } else {
-                dom.clearSearch.classList.add('hidden');
-                dom.searchResultsToast.classList.add('hidden');
-            }
-            
-            renderSlideNavigation();
         }
 
         // Set up event listeners
@@ -1294,8 +1229,19 @@
             dom.btnPrev.addEventListener('click', () => goToSlide(currentSlideIndex - 1));
             dom.btnNext.addEventListener('click', () => goToSlide(currentSlideIndex + 1));
             
-            // Sidebar trigger handles
+            // Sidebar manual trigger handle
             dom.sidebarToggle.addEventListener('click', () => toggleSidebar());
+            
+            // Hover zone to slide out the index automatically when mouse hovers on the left edge
+            const hoverZone = document.getElementById('sidebarHoverZone');
+            hoverZone.addEventListener('mouseenter', () => {
+                toggleSidebar(false); // Open/slide-out sidebar
+            });
+            
+            // Collapse the sidebar automatically when mouse leaves the sidebar area
+            dom.sidebar.addEventListener('mouseleave', () => {
+                toggleSidebar(true); // Close/slide-in sidebar
+            });
             
             // Presenter notes toggle
             dom.btnNotes.addEventListener('click', () => {
@@ -1308,67 +1254,6 @@
             // Action modes
             dom.btnPlay.addEventListener('click', togglePlay);
             dom.btnFullscreen.addEventListener('click', toggleFullscreen);
-
-            // View modes trigger
-            dom.modeSlide.addEventListener('click', () => setViewMode('slide'));
-            dom.modeHandout.addEventListener('click', () => setViewMode('handout'));
-
-            // Search Bar Input Event handlers
-            dom.slideSearch.addEventListener('input', (e) => handleSearch(e.target.value));
-            dom.clearSearch.addEventListener('click', () => {
-                dom.slideSearch.value = '';
-                handleSearch('');
-            });
-            dom.resetSearchFilter.addEventListener('click', () => {
-                dom.slideSearch.value = '';
-                handleSearch('');
-            });
-
-            // Keyboard Shortcuts Listeners
-            document.addEventListener('keydown', (e) => {
-                // Ignore key shortcuts if user is typing in the search bar
-                if (document.activeElement === dom.slideSearch) {
-                    if (e.key === 'Escape') {
-                        dom.slideSearch.blur();
-                    }
-                    return;
-                }
-
-                switch (e.key) {
-                    case 'ArrowLeft':
-                    case 'PageUp':
-                        if (activeViewMode === 'slide' && currentSlideIndex > 1) {
-                            goToSlide(currentSlideIndex - 1);
-                        }
-                        break;
-                    case 'ArrowRight':
-                    case 'PageDown':
-                    case ' ': // Spacebar
-                        e.preventDefault(); // Stop spacebar scrolling stage
-                        if (activeViewMode === 'slide' && currentSlideIndex < SLIDE_DATA.length) {
-                            goToSlide(currentSlideIndex + 1);
-                        }
-                        break;
-                    case 'f':
-                    case 'F':
-                        toggleFullscreen();
-                        break;
-                    case 'n':
-                    case 'N':
-                        if (activeViewMode === 'slide') {
-                            dom.notesPanel.classList.toggle('hidden');
-                        }
-                        break;
-                    case '/':
-                        e.preventDefault();
-                        dom.slideSearch.focus();
-                        break;
-                    case 'Escape':
-                        if (isPlaying) togglePlay();
-                        dom.notesPanel.classList.add('hidden');
-                        break;
-                }
-            });
 
             // Touch Swipe Support for Mobile/Tablet users
             let touchStartX = 0;
@@ -1386,13 +1271,11 @@
             function handleSwipe() {
                 const threshold = 50; // minimum distance for horizontal swipes
                 if (touchEndX < touchStartX - threshold) {
-                    // Swiped Left -> Next Slide
                     if (currentSlideIndex < SLIDE_DATA.length) {
                         goToSlide(currentSlideIndex + 1);
                     }
                 }
                 if (touchEndX > touchStartX + threshold) {
-                    // Swiped Right -> Previous Slide
                     if (currentSlideIndex > 1) {
                         goToSlide(currentSlideIndex - 1);
                     }
